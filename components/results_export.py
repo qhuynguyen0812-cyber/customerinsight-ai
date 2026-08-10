@@ -124,11 +124,13 @@ def validate_profile(profile: pd.DataFrame) -> pd.DataFrame:
 
 
 def available_run_metadata(metadata: Mapping[str, Any]) -> dict[str, Any]:
-    """Return only actual, non-null fields from the upstream run metadata."""
+    """Validate and return the locked minimum production run metadata."""
     if not isinstance(metadata, Mapping):
         raise ResultContractError("Run metadata must be a mapping.")
-    return {
-        field: metadata[field]
-        for field in RUN_METADATA_FIELDS
-        if field in metadata and metadata[field] is not None
-    }
+    missing = [field for field in RUN_METADATA_FIELDS if field not in metadata]
+    if missing:
+        raise ResultContractError("Run metadata is missing: " + ", ".join(missing))
+    null_fields = [field for field in RUN_METADATA_FIELDS if metadata[field] is None]
+    if null_fields:
+        raise ResultContractError("Run metadata contains null values: " + ", ".join(null_fields))
+    return {field: metadata[field] for field in RUN_METADATA_FIELDS}

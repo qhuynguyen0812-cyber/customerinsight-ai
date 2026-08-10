@@ -51,6 +51,18 @@ def test_invalid_current_payload_shows_error_without_export() -> None:
     assert len(app.download_button) == 0
 
 
+def test_results_page_warns_and_does_not_render_invalid_run_metadata() -> None:
+    app = AppTest.from_file(str(ROOT / "views" / "5_Ket_qua.py"))
+    app.session_state["results_valid"] = True
+    app.session_state["customer_results"] = _valid_results()
+    app.session_state["run_metadata"] = {"k": 4, "inertia": 8.5}
+    app.run()
+    assert not app.exception
+    assert len(app.warning) == 1
+    assert "Thông tin lần chạy chưa sẵn sàng" in app.warning[0].value
+    assert len(app.json) == 0
+
+
 def test_algorithm_page_renders_academic_content_and_visual() -> None:
     app = AppTest.from_file(str(ROOT / "views" / "6_Thuat_toan.py")).run()
     assert not app.exception

@@ -10,7 +10,7 @@ TV6 owns FR-014, FR-015, FR-016, FR-017, NFR-004, NFR-006, and NFR-007. TV6 revi
 
 - `customer_results`: a pandas DataFrame whose exact ordered columns are `CustomerID`, `Recency`, `Frequency`, `Monetary`, `Cluster`, `SegmentName`; one current row per unique active customer; raw RFM preserved.
 - `cluster_profiles`: a pandas DataFrame containing at least `Cluster`, `SegmentName`, `count`, `mean Recency`, `mean Frequency`, `mean Monetary`.
-- `run_metadata`: a mapping containing fields actually computed by the current fit. Supported fields are `k`, `init`, `n_init`, `random_state`, `max_iter`, `tol`, `inertia`, `silhouette`, `iterations`, and `runtime_seconds`. Missing fields remain absent; TV6 does not invent values.
+- `run_metadata`: a mapping containing every locked minimum field computed by the current fit: `k`, `init`, `n_init`, `random_state`, `max_iter`, `tol`, `inertia`, `silhouette`, `iterations`, and `runtime_seconds`. Every field must exist and must not be null. Missing or null mandatory fields are rejected; TV6 does not invent values.
 
 TV4 is not implemented on the kickoff baseline. TV6 therefore validates and consumes these outputs but does not recompute a production model, profile, labels, or metadata.
 

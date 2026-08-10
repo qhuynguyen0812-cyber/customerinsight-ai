@@ -58,9 +58,8 @@ def render_results_page(state: Mapping[str, Any]) -> None:
     if metadata is not None:
         try:
             current_metadata = available_run_metadata(metadata)
-            if current_metadata:
-                st.subheader("Thông tin lần chạy")
-                st.json(current_metadata)
+            st.subheader("Thông tin lần chạy")
+            st.json(current_metadata)
         except ResultContractError as error:
             st.warning(f"Thông tin lần chạy chưa sẵn sàng: {error}")
 

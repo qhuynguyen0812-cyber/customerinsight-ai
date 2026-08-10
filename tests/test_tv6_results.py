@@ -72,5 +72,39 @@ def test_exact_output_schema_is_required(results: pd.DataFrame) -> None:
         validate_customer_results(results.assign(Unexpected="value"))
 
 
-def test_metadata_never_invents_unavailable_values() -> None:
-    assert available_run_metadata({"k": 4, "inertia": 8.5}) == {"k": 4, "inertia": 8.5}
+@pytest.fixture
+def run_metadata() -> dict[str, object]:
+    return {
+        "k": 4,
+        "init": "k-means++",
+        "n_init": 10,
+        "random_state": 42,
+        "max_iter": 300,
+        "tol": 0.0001,
+        "inertia": 8.5,
+        "silhouette": 0.61,
+        "iterations": 7,
+        "runtime_seconds": 0.04,
+    }
+
+
+def test_full_run_metadata_contract_passes_without_inventing_values(
+    run_metadata: dict[str, object],
+) -> None:
+    supplied = {**run_metadata, "optional_note": "upstream-only"}
+    validated = available_run_metadata(supplied)
+    assert validated == run_metadata
+    assert "optional_note" not in validated
+
+
+def test_missing_required_run_metadata_field_fails(run_metadata: dict[str, object]) -> None:
+    incomplete = dict(run_metadata)
+    incomplete.pop("runtime_seconds")
+    with pytest.raises(ResultContractError, match="missing: runtime_seconds"):
+        available_run_metadata(incomplete)
+
+
+def test_null_required_run_metadata_field_fails(run_metadata: dict[str, object]) -> None:
+    invalid = {**run_metadata, "silhouette": None}
+    with pytest.raises(ResultContractError, match="null values: silhouette"):
+        available_run_metadata(invalid)
