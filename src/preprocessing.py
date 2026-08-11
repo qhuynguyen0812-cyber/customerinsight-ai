@@ -1,3 +1,4 @@
+feature/tv2-preprocessing-eda
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler
@@ -121,3 +122,4 @@ def run_pipeline_preprocessing(df_raw: pd.DataFrame, missing_strategy: str = "me
         "scaler": scaler,
         "iqr_bounds": iqr_bounds
     }
+
