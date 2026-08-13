@@ -9,6 +9,10 @@ from streamlit.testing.v1 import AppTest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def download_buttons(app: AppTest):
+    return app.get("download_button")
+
+
 def _valid_results() -> pd.DataFrame:
     return pd.DataFrame(
         {
@@ -26,7 +30,7 @@ def test_results_page_is_safely_gated_without_current_results() -> None:
     app = AppTest.from_file(str(ROOT / "views" / "5_Ket_qua.py")).run()
     assert not app.exception
     assert len(app.info) == 1
-    assert len(app.download_button) == 0
+    assert len(download_buttons(app)) == 0
     assert len(app.dataframe) == 0
 
 
@@ -37,8 +41,8 @@ def test_results_page_renders_current_mapping_and_export() -> None:
     app.run()
     assert not app.exception
     assert len(app.dataframe) == 1
-    assert len(app.download_button) == 1
-    assert app.download_button[0].label == "Tải CSV kết quả khách hàng"
+    assert len(download_buttons(app)) == 1
+    assert download_buttons(app)[0].label == "Tải CSV kết quả khách hàng"
 
 
 def test_invalid_current_payload_shows_error_without_export() -> None:
@@ -48,7 +52,7 @@ def test_invalid_current_payload_shows_error_without_export() -> None:
     app.run()
     assert not app.exception
     assert len(app.error) == 1
-    assert len(app.download_button) == 0
+    assert len(download_buttons(app)) == 0
 
 
 def test_results_page_warns_and_does_not_render_invalid_run_metadata() -> None:
