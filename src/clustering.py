@@ -14,6 +14,7 @@ KMEANS_TOL = 0.0001
 FEATURE_COLS = ["Recency", "Frequency", "Monetary"]
 
 
+
 def run_kmeans(
     scaled_df: pd.DataFrame, 
     k: int
