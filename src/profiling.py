@@ -12,27 +12,37 @@ def compute_cluster_profiles(
     cluster_labels: pd.Series
 ) -> pd.DataFrame:
     """
-    Tính toán bảng thống kê (mean, median, min, max, count, percentage)
-    của từng cụm trên dữ liệu gốc chưa scale.
+    Tính toán bảng thống kê chi tiết của từng cụm trên dữ liệu gốc.
     """
+    if original_df.empty or len(original_df) != len(cluster_labels):
+        raise ValueError("Dữ liệu gốc và nhãn cụm không khớp kích thước hoặc bị rỗng.")
+
     df = original_df.copy()
     df["Cluster"] = cluster_labels
 
-    # Thống kê tổng hợp theo từng Cluster
     summary_list = []
     total_customers = len(df)
 
     for cluster_id, group in df.groupby("Cluster"):
         row = {
-            "Cluster": cluster_id,
+            "Cluster": int(cluster_id),
             "Count": len(group),
             "Percentage": round((len(group) / total_customers) * 100, 2),
             "Recency_Mean": round(group["Recency"].mean(), 2),
             "Recency_Median": round(group["Recency"].median(), 2),
+            "Recency_Min": round(group["Recency"].min(), 2),
+            "Recency_Max": round(group["Recency"].max(), 2),
+            "Recency_Std": round(group["Recency"].std(), 2) if len(group) > 1 else 0.0,
             "Frequency_Mean": round(group["Frequency"].mean(), 2),
             "Frequency_Median": round(group["Frequency"].median(), 2),
+            "Frequency_Min": round(group["Frequency"].min(), 2),
+            "Frequency_Max": round(group["Frequency"].max(), 2),
+            "Frequency_Std": round(group["Frequency"].std(), 2) if len(group) > 1 else 0.0,
             "Monetary_Mean": round(group["Monetary"].mean(), 2),
             "Monetary_Median": round(group["Monetary"].median(), 2),
+            "Monetary_Min": round(group["Monetary"].min(), 2),
+            "Monetary_Max": round(group["Monetary"].max(), 2),
+            "Monetary_Std": round(group["Monetary"].std(), 2) if len(group) > 1 else 0.0,
         }
         summary_list.append(row)
 
@@ -47,7 +57,6 @@ def generate_business_interpretation(profile_df: pd.DataFrame) -> Dict[int, Dict
     """
     interpretations = {}
 
-    # Lấy mốc so sánh trung bình giữa các cụm
     avg_r = profile_df["Recency_Mean"].mean()
     avg_f = profile_df["Frequency_Mean"].mean()
     avg_m = profile_df["Monetary_Mean"].mean()
@@ -58,14 +67,10 @@ def generate_business_interpretation(profile_df: pd.DataFrame) -> Dict[int, Dict
         f_val = row["Frequency_Mean"]
         m_val = row["Monetary_Mean"]
 
-        # Đánh giá mức độ Cao / Thấp
-        # Recency thấp = Gần đây có mua hàng (Tốt)
-        # Recency cao = Đã lâu không mua hàng
         r_tag = "Gần đây" if r_val <= avg_r else "Đã lâu"
         f_tag = "Tần suất cao" if f_val >= avg_f else "Tần suất thấp"
         m_tag = "Chi tiêu cao" if m_val >= avg_m else "Chi tiêu thấp"
 
-        # Định danh phân khúc
         if r_val <= avg_r and f_val >= avg_f and m_val >= avg_m:
             segment_name = "Khách hàng VIP / Trung thành"
             action = "Chăm sóc đặc biệt, chương trình tri ân và duy trì quyền lợi cao cấp."
