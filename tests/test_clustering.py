@@ -18,7 +18,7 @@ def sample_rfm_data():
 
 
 def test_run_kmeans_output_structure(sample_rfm_data):
-    """Kiểm tra số lượng nhãn và số cụm trả về từ mô hình."""
+    """Kiểm tra cấu trúc nhãn và số cụm trả về từ mô hình."""
     k = 3
     model, labels = run_kmeans(sample_rfm_data, k=k)
 
@@ -27,22 +27,29 @@ def test_run_kmeans_output_structure(sample_rfm_data):
     assert model.n_clusters == k
 
 
+def test_run_kmeans_validation_errors(sample_rfm_data):
+    """Kiểm tra các trường hợp bắt lỗi ngoại lệ."""
+    with pytest.raises(ValueError):
+        run_kmeans(pd.DataFrame(), k=3)
+
+    with pytest.raises(ValueError):
+        run_kmeans(sample_rfm_data, k=1)
+
+    with pytest.raises(ValueError):
+        run_kmeans(sample_rfm_data.head(2), k=5)
+
+
 def test_compute_cluster_profiles(sample_rfm_data):
-    """Kiểm tra bảng thống kê đặc trưng của các cụm."""
+    """Kiểm tra bảng thống kê chi tiết đặc trưng của các cụm."""
     k = 3
     _, labels = run_kmeans(sample_rfm_data, k=k)
     profile_df = compute_cluster_profiles(sample_rfm_data, labels)
 
     expected_cols = [
-        "Cluster",
-        "Count",
-        "Percentage",
-        "Recency_Mean",
-        "Recency_Median",
-        "Frequency_Mean",
-        "Frequency_Median",
-        "Monetary_Mean",
-        "Monetary_Median",
+        "Cluster", "Count", "Percentage",
+        "Recency_Mean", "Recency_Median", "Recency_Min", "Recency_Max", "Recency_Std",
+        "Frequency_Mean", "Frequency_Median", "Frequency_Min", "Frequency_Max", "Frequency_Std",
+        "Monetary_Mean", "Monetary_Median", "Monetary_Min", "Monetary_Max", "Monetary_Std",
     ]
 
     for col in expected_cols:
@@ -51,10 +58,9 @@ def test_compute_cluster_profiles(sample_rfm_data):
     assert profile_df["Count"].sum() == len(sample_rfm_data)
     assert pytest.approx(profile_df["Percentage"].sum(), 0.1) == 100.0
 
- 
 
 def test_generate_business_interpretation(sample_rfm_data):
-    """Kiểm tra việc sinh diễn giải kinh doanh mà không phụ thuộc hard-code k=3."""
+    """Kiểm tra việc sinh diễn giải kinh doanh linh hoạt theo K."""
     for test_k in [2, 4]:
         _, labels = run_kmeans(sample_rfm_data, k=test_k)
         profile_df = compute_cluster_profiles(sample_rfm_data, labels)
