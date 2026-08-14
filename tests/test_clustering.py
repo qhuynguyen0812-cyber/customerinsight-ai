@@ -51,6 +51,7 @@ def test_compute_cluster_profiles(sample_rfm_data):
     assert profile_df["Count"].sum() == len(sample_rfm_data)
     assert pytest.approx(profile_df["Percentage"].sum(), 0.1) == 100.0
 
+ 
 
 def test_generate_business_interpretation(sample_rfm_data):
     """Kiểm tra việc sinh diễn giải kinh doanh mà không phụ thuộc hard-code k=3."""

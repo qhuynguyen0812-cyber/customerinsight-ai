@@ -5,7 +5,6 @@ from typing import Tuple
 import pandas as pd
 from sklearn.cluster import KMeans
 
-# Các tham số cố định bắt buộc theo quy định
 KMEANS_INIT = "k-means++"
 KMEANS_N_INIT = 10
 KMEANS_RANDOM_STATE = 42
@@ -14,31 +13,31 @@ KMEANS_TOL = 0.0001
 FEATURE_COLS = ["Recency", "Frequency", "Monetary"]
 
 
-
 def run_kmeans(
     scaled_df: pd.DataFrame, 
     k: int
 ) -> Tuple[KMeans, pd.Series]:
     """
-    Huấn luyện K-Means và trả về model cùng nhãn cụm (Cluster ID).
-
-    Parameters:
-    ----------
-    scaled_df : pd.DataFrame
-        DataFrame chứa các features đã được chuẩn hóa (StandardScaler).
-    k : int
-        Số lượng cụm do bước phân tích K (TV3) truyền sang.
-
-    Returns:
-    -------
-    Tuple[KMeans, pd.Series]
-        - model: Đối tượng KMeans đã fit.
-        - cluster_labels: Series chứa nhãn cụm [0, k-1] với index tương ứng.
+    Huấn luyện K-Means với kiểm tra ràng buộc đầu vào.
     """
-    # 1. Đảm bảo dữ liệu đầu vào chỉ chứa 3 cột RFM
+    if scaled_df is None or scaled_df.empty:
+        raise ValueError("Dữ liệu đầu vào không được để trống.")
+
+    if k < 2:
+        raise ValueError(f"Số lượng cụm k phải >= 2, giá trị nhận được: {k}")
+
+    if len(scaled_df) < k:
+        raise ValueError(f"Số lượng mẫu ({len(scaled_df)}) phải lớn hơn hoặc bằng số cụm k ({k}).")
+
+    missing_cols = [col for col in FEATURE_COLS if col not in scaled_df.columns]
+    if missing_cols:
+        raise KeyError(f"Thiếu các cột bắt buộc trong dữ liệu: {missing_cols}")
+
     features = scaled_df[FEATURE_COLS]
 
-    # 2. Khởi tạo mô hình theo đúng bộ tham số khóa cứng
+    if features.isnull().any().any():
+        raise ValueError("Dữ liệu chứa giá trị null/NaN trước khi đưa vào K-Means.")
+
     model = KMeans(
         n_clusters=k,
         init=KMEANS_INIT,
@@ -48,10 +47,8 @@ def run_kmeans(
         tol=KMEANS_TOL
     )
 
-    # 3. Fit và dự đoán nhãn cụm
     labels = model.fit_predict(features)
 
-    # 4. Trả về model và nhãn dạng Series
     cluster_labels = pd.Series(
         labels, 
         index=scaled_df.index, 
