@@ -1,93 +1,154 @@
-"""
-Module tính toán Cluster Profiling và Business Interpretation cho RFM.
-"""
-from typing import Dict
-import pandas as pd
+"""TV4 clustering orchestration, RFM profiling, and interpretation."""
 
-FEATURE_COLS = ["Recency", "Frequency", "Monetary"]
+from __future__ import annotations
+
+from collections.abc import Mapping, Sequence
+from time import perf_counter
+from typing import Any
+
+import numpy as np
+import pandas as pd
+from sklearn.metrics import silhouette_score
+
+from components.results_export import build_customer_results, validate_profile
+from src.clustering import get_default_solver_kwargs, run_kmeans
+from src.state import AppState, set_clustering_result
+
+RFM_COLUMNS = ["Recency", "Frequency", "Monetary"]
+PROFILE_REQUIRED_COLUMNS = [
+    "Cluster", "SegmentName", "count", "mean Recency", "mean Frequency", "mean Monetary"
+]
+
+
+def _validated_business_data(data: pd.DataFrame) -> pd.DataFrame:
+    if not isinstance(data, pd.DataFrame) or data.empty:
+        raise ValueError("Processed customer data must be a non-empty DataFrame.")
+    missing = [column for column in ["CustomerID", *RFM_COLUMNS] if column not in data.columns]
+    if missing:
+        raise ValueError("Processed customer data is missing: " + ", ".join(missing))
+    if data[["CustomerID", *RFM_COLUMNS]].isna().any().any():
+        raise ValueError("Processed customer data cannot contain missing CustomerID or RFM values.")
+    if data["CustomerID"].duplicated().any():
+        raise ValueError("CustomerID values must be unique.")
+    numeric = data[RFM_COLUMNS].apply(pd.to_numeric, errors="coerce")
+    if numeric.isna().any().any() or not np.isfinite(numeric.to_numpy()).all():
+        raise ValueError("RFM values must be finite numbers.")
+    result = data.loc[:, ["CustomerID", *RFM_COLUMNS]].copy(deep=True)
+    result[RFM_COLUMNS] = numeric
+    return result
+
+
+def _validated_labels(labels: Sequence[int] | np.ndarray, row_count: int) -> np.ndarray:
+    values = np.asarray(labels)
+    if values.ndim != 1 or len(values) != row_count:
+        raise ValueError(f"Labels must be one-dimensional and match all {row_count} processed rows.")
+    if len(values) == 0 or not np.issubdtype(values.dtype, np.integer):
+        raise ValueError("Labels must contain integer cluster identifiers.")
+    if (values < 0).any():
+        raise ValueError("Cluster identifiers cannot be negative.")
+    return values.astype(int, copy=True)
+
+
+def _semantic_names(profile: pd.DataFrame) -> dict[int, str]:
+    """Derive deterministic, evidence-limited names from relative RFM ranks."""
+    ranked = profile.sort_values(
+        ["mean Monetary", "mean Frequency", "mean Recency", "Cluster"],
+        ascending=[False, False, True, True],
+        kind="stable",
+    )
+    percentiles = profile.set_index("Cluster")[[
+        "mean Recency", "mean Frequency", "mean Monetary"
+    ]].rank(method="average", pct=True)
+    names: dict[int, str] = {}
+    used: dict[str, int] = {}
+    for cluster in ranked["Cluster"].astype(int):
+        scores = percentiles.loc[cluster]
+        recency = "hoạt động gần đây" if scores["mean Recency"] <= 0.5 else "ít hoạt động gần đây"
+        frequency = "tần suất cao" if scores["mean Frequency"] > 0.5 else "tần suất thấp"
+        monetary = "giá trị cao" if scores["mean Monetary"] > 0.5 else "giá trị thấp"
+        base = f"{monetary.capitalize()} – {recency}, {frequency}"
+        occurrence = used.get(base, 0) + 1
+        used[base] = occurrence
+        # Ties are distinguished by their deterministic profile rank, never by raw label meaning.
+        names[cluster] = base if occurrence == 1 else f"{base} (nhóm {occurrence})"
+    return names
 
 
 def compute_cluster_profiles(
-    original_df: pd.DataFrame, 
-    cluster_labels: pd.Series
+    processed_df: pd.DataFrame, cluster_labels: Sequence[int] | np.ndarray
 ) -> pd.DataFrame:
-    """
-    Tính toán bảng thống kê chi tiết của từng cụm trên dữ liệu gốc.
-    """
-    if original_df.empty or len(original_df) != len(cluster_labels):
-        raise ValueError("Dữ liệu gốc và nhãn cụm không khớp kích thước hoặc bị rỗng.")
+    """Build one TV6-compatible profile row per observed cluster."""
+    customers = _validated_business_data(processed_df)
+    labels = _validated_labels(cluster_labels, len(customers))
+    working = customers.assign(Cluster=labels)
+    grouped = working.groupby("Cluster", sort=True, observed=True)
+    profile = grouped[RFM_COLUMNS].agg(["mean", "median", "min", "max", "std"])
+    profile.columns = [f"{stat} {feature}" for feature, stat in profile.columns]
+    profile = profile.reset_index()
+    profile.insert(1, "count", grouped.size().to_numpy())
+    profile.insert(2, "percentage", profile["count"] / len(working) * 100.0)
+    profile = profile.fillna({f"std {feature}": 0.0 for feature in RFM_COLUMNS})
+    names = _semantic_names(profile)
+    profile.insert(1, "SegmentName", profile["Cluster"].map(names))
+    profile = profile.loc[:, PROFILE_REQUIRED_COLUMNS + [
+        column for column in profile.columns if column not in PROFILE_REQUIRED_COLUMNS
+    ]]
+    validate_profile(profile)
+    if int(profile["count"].sum()) != len(working):
+        raise ValueError("Profile counts do not cover every processed row.")
+    return profile
 
-    df = original_df.copy()
-    df["Cluster"] = cluster_labels
 
-    summary_list = []
-    total_customers = len(df)
-
-    for cluster_id, group in df.groupby("Cluster"):
-        row = {
-            "Cluster": int(cluster_id),
-            "Count": len(group),
-            "Percentage": round((len(group) / total_customers) * 100, 2),
-            "Recency_Mean": round(group["Recency"].mean(), 2),
-            "Recency_Median": round(group["Recency"].median(), 2),
-            "Recency_Min": round(group["Recency"].min(), 2),
-            "Recency_Max": round(group["Recency"].max(), 2),
-            "Recency_Std": round(group["Recency"].std(), 2) if len(group) > 1 else 0.0,
-            "Frequency_Mean": round(group["Frequency"].mean(), 2),
-            "Frequency_Median": round(group["Frequency"].median(), 2),
-            "Frequency_Min": round(group["Frequency"].min(), 2),
-            "Frequency_Max": round(group["Frequency"].max(), 2),
-            "Frequency_Std": round(group["Frequency"].std(), 2) if len(group) > 1 else 0.0,
-            "Monetary_Mean": round(group["Monetary"].mean(), 2),
-            "Monetary_Median": round(group["Monetary"].median(), 2),
-            "Monetary_Min": round(group["Monetary"].min(), 2),
-            "Monetary_Max": round(group["Monetary"].max(), 2),
-            "Monetary_Std": round(group["Monetary"].std(), 2) if len(group) > 1 else 0.0,
+def generate_business_interpretation(profile_df: pd.DataFrame) -> dict[int, dict[str, str]]:
+    """Return deterministic RFM descriptions and cautious suggested actions."""
+    profile = validate_profile(profile_df)
+    names = _semantic_names(profile)
+    return {
+        int(row["Cluster"]): {
+            "segment_name": names[int(row["Cluster"])],
+            "characteristics": names[int(row["Cluster"])],
+            "recommendation": (
+                "Ưu tiên duy trì tương tác và cân nhắc cơ hội gia tăng giá trị."
+                if row["mean Monetary"] >= profile["mean Monetary"].median()
+                else "Cân nhắc chiến dịch nuôi dưỡng hoặc tái kích hoạt phù hợp."
+            ),
         }
-        summary_list.append(row)
-
-    profile_df = pd.DataFrame(summary_list)
-    return profile_df
+        for _, row in profile.iterrows()
+    }
 
 
-def generate_business_interpretation(profile_df: pd.DataFrame) -> Dict[int, Dict[str, str]]:
-    """
-    Tự động phân loại đặc điểm kinh doanh của từng cụm dựa trên 
-    so sánh tương quan giá trị trung bình RFM giữa các cụm.
-    """
-    interpretations = {}
+def run_clustering_workflow(state: AppState) -> dict[str, Any]:
+    """Compute all TV4/TV6 artifacts locally, then commit them atomically."""
+    if state.scaled_matrix is None:
+        raise ValueError("Scaled features are required before clustering.")
+    if state.selected_k is None:
+        raise ValueError("A confirmed K is required before clustering.")
+    customers = _validated_business_data(state.processed_df)
+    if len(state.scaled_matrix) != len(customers):
+        raise ValueError("Scaled features and processed customer rows are not aligned.")
 
-    avg_r = profile_df["Recency_Mean"].mean()
-    avg_f = profile_df["Frequency_Mean"].mean()
-    avg_m = profile_df["Monetary_Mean"].mean()
-
-    for _, row in profile_df.iterrows():
-        c_id = int(row["Cluster"])
-        r_val = row["Recency_Mean"]
-        f_val = row["Frequency_Mean"]
-        m_val = row["Monetary_Mean"]
-
-        r_tag = "Gần đây" if r_val <= avg_r else "Đã lâu"
-        f_tag = "Tần suất cao" if f_val >= avg_f else "Tần suất thấp"
-        m_tag = "Chi tiêu cao" if m_val >= avg_m else "Chi tiêu thấp"
-
-        if r_val <= avg_r and f_val >= avg_f and m_val >= avg_m:
-            segment_name = "Khách hàng VIP / Trung thành"
-            action = "Chăm sóc đặc biệt, chương trình tri ân và duy trì quyền lợi cao cấp."
-        elif r_val > avg_r and f_val < avg_f and m_val < avg_m:
-            segment_name = "Khách hàng Ngủ đông / Rời bỏ"
-            action = "Gửi chiến dịch tái kích hoạt, khảo sát lý do ngừng mua."
-        elif r_val <= avg_r and (f_val < avg_f or m_val < avg_m):
-            segment_name = "Khách hàng Mới / Tiềm năng"
-            action = "Khuyến khích gia tăng đơn hàng tiếp theo thông qua ưu đãi."
-        else:
-            segment_name = "Khách hàng Trung bình / Cần kích cầu"
-            action = "Cung cấp ưu đãi cá nhân hóa để tăng tần suất và giá trị đơn hàng."
-
-        interpretations[c_id] = {
-            "segment_name": segment_name,
-            "characteristics": f"{r_tag}, {f_tag}, {m_tag}",
-            "recommendation": action
-        }
-
-    return interpretations
+    started = perf_counter()
+    fit = run_kmeans(state.scaled_matrix, state.selected_k, state.solver_preferences)
+    silhouette = float(silhouette_score(state.scaled_matrix, fit.labels))
+    profiles = compute_cluster_profiles(customers, fit.labels)
+    interpretation = generate_business_interpretation(profiles)
+    assignments = customers[["CustomerID"]].assign(
+        Cluster=fit.labels,
+        SegmentName=pd.Series(fit.labels).map(
+            profiles.set_index("Cluster")["SegmentName"]
+        ).to_numpy(),
+    )
+    results = build_customer_results(customers, assignments)
+    effective = get_default_solver_kwargs()
+    if isinstance(state.solver_preferences, Mapping):
+        effective.update(state.solver_preferences)
+    metadata = {
+        "k": int(state.selected_k), **effective, "inertia": fit.inertia,
+        "silhouette": silhouette, "iterations": fit.iterations,
+        "runtime_seconds": perf_counter() - started,
+    }
+    set_clustering_result(
+        state, fit.model, fit.labels, profiles,
+        run_metadata=metadata, results=results,
+    )
+    return {"profiles": profiles, "interpretation": interpretation, "metadata": metadata}
