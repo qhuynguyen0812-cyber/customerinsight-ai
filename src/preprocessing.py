@@ -1,125 +1,193 @@
-feature/tv2-preprocessing-eda
-import pandas as pd
-import numpy as np
-from sklearn.preprocessing import StandardScaler
-from typing import Tuple, Dict, Any
+"""Local preprocessing for the canonical CustomerID/RFM dataset."""
 
-def check_data_quality(df: pd.DataFrame) -> Dict[str, Any]:
-    """
-    FR-004: Data Quality Assessment
-    Trả về báo cáo chất lượng dữ liệu bao gồm missing values và số lượng bản ghi.
-    """
+from __future__ import annotations
+
+from hashlib import sha256
+import json
+from typing import Any, Final, Sequence
+
+import numpy as np
+import pandas as pd
+from sklearn.preprocessing import StandardScaler
+
+RFM_FEATURES: Final[tuple[str, ...]] = ("Recency", "Frequency", "Monetary")
+REQUIRED_COLUMNS: Final[tuple[str, ...]] = ("CustomerID", *RFM_FEATURES)
+DEFAULT_MISSING_STRATEGY: Final[str] = "median"
+DEFAULT_OUTLIER_STRATEGY: Final[str] = "iqr_clip"
+
+
+class PreprocessingError(ValueError):
+    """An expected, user-correctable preprocessing failure."""
+
+
+def _validate_input(df: pd.DataFrame) -> None:
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError("df must be a pandas DataFrame")
+    missing = [column for column in REQUIRED_COLUMNS if column not in df.columns]
+    if missing:
+        raise PreprocessingError("Missing required columns: " + ", ".join(missing))
+    if df.empty:
+        raise PreprocessingError("The dataset must contain at least one row.")
+    for column in RFM_FEATURES:
+        values = pd.to_numeric(df[column], errors="coerce")
+        invalid = df[column].notna() & values.isna()
+        if invalid.any():
+            raise PreprocessingError(f"{column} contains non-numeric values.")
+        if np.isinf(values.dropna().to_numpy(dtype=float)).any():
+            raise PreprocessingError(f"{column} contains infinite values.")
+
+
+def check_data_quality(df: pd.DataFrame) -> dict[str, Any]:
+    """Return a compact quality report without changing the input."""
+
     total_rows = len(df)
-    missing_report = df.isnull().sum().to_dict()
-    missing_pct = (df.isnull().sum() / total_rows * 100).round(2).to_dict()
-    
+    missing = df.isna().sum()
+    percentages = (
+        (missing / total_rows * 100).round(2) if total_rows else missing.astype(float)
+    )
     return {
         "total_rows": total_rows,
         "total_columns": len(df.columns),
-        "missing_counts": missing_report,
-        "missing_percentages": missing_pct,
-        "duplicate_rows": int(df.duplicated().sum())
+        "missing_counts": {key: int(value) for key, value in missing.items()},
+        "missing_percentages": percentages.to_dict(),
+        "duplicate_rows": int(df.duplicated().sum()),
     }
 
-def handle_missing_values(df: pd.DataFrame, strategy: str = "median") -> pd.DataFrame:
-    """
-    FR-005: Missing values handling
-    Default: median imputation.
-    """
-    df_clean = df.copy()
-    rfm_cols = ['Recency', 'Frequency', 'Monetary']
-    
-    for col in rfm_cols:
-        if col in df_clean.columns and df_clean[col].isnull().sum() > 0:
-            if strategy == "median":
-                fill_val = df_clean[col].median()
-                df_clean[col] = df_clean[col].fillna(fill_val)
-            elif strategy == "mean":
-                fill_val = df_clean[col].mean()
-                df_clean[col] = df_clean[col].fillna(fill_val)
-                
-    return df_clean
 
-def handle_outliers_iqr(df: pd.DataFrame, columns: list = None, factor: float = 1.5) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """
-    FR-006: Outliers handling using IQR Clipping (Winsorization).
-    Đảm bảo GIỮ NGUYÊN số lượng dòng (row count).
-    """
-    df_clipped = df.copy()
-    if columns is None:
-        columns = ['Recency', 'Frequency', 'Monetary']
-        
-    iqr_bounds = {}
-    
-    for col in columns:
-        if col in df_clipped.columns:
-            Q1 = df_clipped[col].quantile(0.25)
-            Q3 = df_clipped[col].quantile(0.75)
-            IQR = Q3 - Q1
-            lower_bound = Q1 - factor * IQR
-            upper_bound = Q3 + factor * IQR
-            
-            iqr_bounds[col] = {
-                "Q1": Q1,
-                "Q3": Q3,
-                "IQR": IQR,
-                "lower_bound": lower_bound,
-                "upper_bound": upper_bound
-            }
-            
-            # Clipping/Winsorization: Giới hạn giá trị trong khoảng [lower_bound, upper_bound]
-            df_clipped[col] = np.clip(df_clipped[col], lower_bound, upper_bound)
-            
-    return df_clipped, iqr_bounds
+def handle_missing_values(
+    df: pd.DataFrame, strategy: str = DEFAULT_MISSING_STRATEGY
+) -> pd.DataFrame:
+    """Impute each RFM feature independently while preserving all rows and IDs."""
 
-def scale_rfm_features(df: pd.DataFrame, feature_cols: list = None) -> Tuple[np.ndarray, StandardScaler, pd.DataFrame]:
-    """
-    FR-007: Feature Scaling bằng StandardScaler.
-    Lưu ý:
-    - Chỉ áp dụng scaler trên 3 đặc trưng ['Recency', 'Frequency', 'Monetary'].
-    - CustomerID tuyệt đối KHÔNG đưa vào scaler/model matrix.
-    """
-    if feature_cols is None:
-        feature_cols = ['Recency', 'Frequency', 'Monetary']
-        
-    # Đảm bảo chỉ chọn đúng các cột RFM tồn tại
-    valid_cols = [c for c in feature_cols if c in df.columns]
-    
+    if strategy != DEFAULT_MISSING_STRATEGY:
+        raise PreprocessingError(
+            f"Unsupported missing strategy: {strategy!r}. Supported: 'median'."
+        )
+    _validate_input(df)
+    result = df.copy(deep=True)
+    for column in RFM_FEATURES:
+        values = pd.to_numeric(result[column], errors="coerce")
+        median = values.median(skipna=True)
+        if pd.isna(median):
+            raise PreprocessingError(
+                f"{column} cannot be imputed because it has no valid values."
+            )
+        result[column] = values.fillna(median)
+    return result
+
+
+def handle_outliers_iqr(
+    df: pd.DataFrame,
+    columns: Sequence[str] | None = None,
+    factor: float = 1.5,
+) -> tuple[pd.DataFrame, dict[str, dict[str, float]]]:
+    """Clip selected features to deterministic Tukey IQR bounds."""
+
+    selected = tuple(columns) if columns is not None else RFM_FEATURES
+    unknown = [column for column in selected if column not in df.columns]
+    if unknown:
+        raise PreprocessingError("Missing clipping columns: " + ", ".join(unknown))
+    if not np.isfinite(factor) or factor < 0:
+        raise PreprocessingError("IQR factor must be a finite non-negative number.")
+
+    result = df.copy(deep=True)
+    bounds: dict[str, dict[str, float]] = {}
+    for column in selected:
+        values = pd.to_numeric(result[column], errors="coerce")
+        if values.isna().any() or np.isinf(values.to_numpy(dtype=float)).any():
+            raise PreprocessingError(
+                f"{column} must be finite and complete before IQR clipping."
+            )
+        q1 = float(values.quantile(0.25))
+        q3 = float(values.quantile(0.75))
+        iqr = q3 - q1
+        lower = q1 - factor * iqr
+        upper = q3 + factor * iqr
+        bounds[column] = {
+            "q1": q1,
+            "q3": q3,
+            "iqr": iqr,
+            "lower_bound": lower,
+            "upper_bound": upper,
+        }
+        result[column] = values.clip(lower=lower, upper=upper)
+    return result, bounds
+
+
+def scale_rfm_features(
+    df: pd.DataFrame, feature_cols: Sequence[str] | None = None
+) -> tuple[np.ndarray, StandardScaler, pd.DataFrame]:
+    """Fit StandardScaler on exactly the three canonical RFM features."""
+
+    selected = tuple(feature_cols) if feature_cols is not None else RFM_FEATURES
+    if selected != RFM_FEATURES:
+        raise PreprocessingError(
+            "Scaler features must be exactly Recency, Frequency, Monetary."
+        )
+    values = df.loc[:, list(RFM_FEATURES)].astype(float)
+    if not np.isfinite(values.to_numpy()).all():
+        raise PreprocessingError("RFM values must be finite and complete before scaling.")
     scaler = StandardScaler()
-    scaled_matrix = scaler.fit_transform(df[valid_cols])
-    
-    # Tạo DataFrame đã scale để phục vụ mục đích EDA/Trực quan hóa nếu cần
-    df_scaled = df.copy()
-    df_scaled[valid_cols] = scaled_matrix
-    
-    return scaled_matrix, scaler, df_scaled
+    scaled_matrix = scaler.fit_transform(values)
+    scaled_df = pd.DataFrame(scaled_matrix, columns=RFM_FEATURES, index=df.index)
+    return scaled_matrix, scaler, scaled_df
 
-def run_pipeline_preprocessing(df_raw: pd.DataFrame, missing_strategy: str = "median", outlier_strategy: str = "iqr_clip") -> Dict[str, Any]:
-    """
-    Pipeline chính kết hợp đầy đủ các bước tiền xử lý cho TV2 và trả về metadata cho TV3.
-    """
-    # 1. Quality check
+
+def _stable_number(value: float) -> str:
+    return float(value).hex()
+
+
+def _signature(metadata: dict[str, Any]) -> str:
+    payload = json.dumps(metadata, sort_keys=True, separators=(",", ":"))
+    return sha256(payload.encode("utf-8")).hexdigest()
+
+
+def run_pipeline_preprocessing(
+    df_raw: pd.DataFrame,
+    missing_strategy: str = DEFAULT_MISSING_STRATEGY,
+    outlier_strategy: str = DEFAULT_OUTLIER_STRATEGY,
+) -> dict[str, Any]:
+    """Run median imputation, IQR clipping, and RFM-only scaling locally."""
+
+    if outlier_strategy != DEFAULT_OUTLIER_STRATEGY:
+        raise PreprocessingError(
+            f"Unsupported outlier strategy: {outlier_strategy!r}. Supported: 'iqr_clip'."
+        )
+    _validate_input(df_raw)
     quality_report = check_data_quality(df_raw)
-    
-    # 2. Missing handling
-    df_no_missing = handle_missing_values(df_raw, strategy=missing_strategy)
-    
-    # 3. Outlier handling (giữ nguyên row count)
-    if outlier_strategy == "iqr_clip":
-        df_clean, iqr_bounds = handle_outliers_iqr(df_no_missing)
-    else:
-        df_clean = df_no_missing.copy()
-        iqr_bounds = {}
-        
-    # 4. Scaling (loại bỏ CustomerID khỏi ma trận đầu ra)
-    scaled_matrix, scaler, df_scaled = scale_rfm_features(df_clean)
-    
+    imputed = handle_missing_values(df_raw, missing_strategy)
+    medians = {column: float(imputed[column].median()) for column in RFM_FEATURES}
+    processed_df, iqr_bounds = handle_outliers_iqr(imputed)
+    scaled_matrix, scaler, scaled_df = scale_rfm_features(processed_df)
+
+    metadata = {
+        "missing_strategy": missing_strategy,
+        "outlier_strategy": outlier_strategy,
+        "features": list(RFM_FEATURES),
+        "medians": {key: _stable_number(value) for key, value in medians.items()},
+        "iqr_bounds": {
+            column: {key: _stable_number(value) for key, value in values.items()}
+            for column, values in iqr_bounds.items()
+        },
+    }
+    signature = _signature(metadata)
     return {
-        "quality_report": quality_report,
-        "processed_df": df_clean,
-        "scaled_df": df_scaled,
-        "scaled_matrix": scaled_matrix,  # Ma trận truyền trực tiếp cho TV3 K-Means
+        "processed_df": processed_df,
+        "scaled_matrix": scaled_matrix,
         "scaler": scaler,
-        "iqr_bounds": iqr_bounds
+        "scaled_df": scaled_df,
+        "quality_report": quality_report,
+        "iqr_bounds": iqr_bounds,
+        "metadata": metadata,
+        "preprocessing_signature": signature,
+        "eda_summary": {
+            "quality_report": quality_report,
+            "iqr_bounds": iqr_bounds,
+            "metadata": metadata,
+            "scaler": scaler,
+        },
     }
 
+
+# Backward-compatible descriptive alias for callers preferring a shorter name.
+preprocess_rfm = run_pipeline_preprocessing
