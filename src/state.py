@@ -37,6 +37,7 @@ class AppState:
     model: Any | None = None
     labels: Any | None = None
     cluster_profiles: Any | None = None
+    run_metadata: Any | None = None
 
     # TV6: presentation/export output
     results: Any | None = None
@@ -57,7 +58,8 @@ STATE_DEPENDENCIES: Final[dict[str, tuple[str, ...]]] = {
     "model": ("scaled_matrix", "selected_k", "solver_preferences"),
     "labels": ("model",),
     "cluster_profiles": ("processed_df", "labels"),
-    "results": ("cluster_profiles",),
+    "run_metadata": ("model",),
+    "results": ("cluster_profiles", "run_metadata"),
     "export_payload": ("results",),
 }
 
@@ -170,7 +172,13 @@ def set_solver_preferences(state: AppState, preferences: Any) -> None:
 
 
 def set_clustering_result(
-    state: AppState, model: Any, labels: Any, cluster_profiles: Any
+    state: AppState,
+    model: Any,
+    labels: Any,
+    cluster_profiles: Any,
+    *,
+    run_metadata: Any | None = None,
+    results: Any | None = None,
 ) -> None:
     """Atomically commit a successful TV4 run."""
 
@@ -180,6 +188,8 @@ def set_clustering_result(
     state.model = model
     state.labels = labels
     state.cluster_profiles = cluster_profiles
+    state.run_metadata = run_metadata
+    state.results = results
 
 
 def set_results(state: AppState, results: Any, export_payload: Any | None = None) -> None:

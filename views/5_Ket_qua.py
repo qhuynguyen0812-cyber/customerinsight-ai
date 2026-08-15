@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
 
 import streamlit as st
+
+from components.states import get_app_state
 
 from components.results_export import (
     ResultContractError,
@@ -24,15 +25,19 @@ CLUSTER_PROFILES_KEY = "cluster_profiles"
 RUN_METADATA_KEY = "run_metadata"
 
 
-def render_results_page(state: Mapping[str, Any]) -> None:
+def render_results_page(state) -> None:
     """Render only outputs declared current by the upstream state owner."""
     st.title("Kết quả phân cụm")
-    if state.get(RESULTS_VALID_KEY) is not True:
+    legacy = isinstance(state, Mapping)
+    results_valid = state.get(RESULTS_VALID_KEY) is True if legacy else state.results is not None
+    if not results_valid:
         st.info("Chưa có kết quả hợp lệ. Hãy hoàn tất bước Phân cụm trước khi xem hoặc xuất dữ liệu.")
         return
 
     try:
-        customers = validate_customer_results(state.get(CUSTOMER_RESULTS_KEY))
+        customers = validate_customer_results(
+            state.get(CUSTOMER_RESULTS_KEY) if legacy else state.results
+        )
     except ResultContractError as error:
         st.error(f"Không thể hiển thị kết quả hiện tại: {error}")
         return
@@ -46,7 +51,7 @@ def render_results_page(state: Mapping[str, Any]) -> None:
         ]
     st.dataframe(visible, width="stretch", hide_index=True)
 
-    profile = state.get(CLUSTER_PROFILES_KEY)
+    profile = state.get(CLUSTER_PROFILES_KEY) if legacy else state.cluster_profiles
     if profile is not None:
         try:
             st.subheader("Hồ sơ cụm")
@@ -54,7 +59,7 @@ def render_results_page(state: Mapping[str, Any]) -> None:
         except ResultContractError as error:
             st.warning(f"Hồ sơ cụm chưa sẵn sàng: {error}")
 
-    metadata = state.get(RUN_METADATA_KEY)
+    metadata = state.get(RUN_METADATA_KEY) if legacy else state.run_metadata
     if metadata is not None:
         try:
             current_metadata = available_run_metadata(metadata)
@@ -72,4 +77,4 @@ def render_results_page(state: Mapping[str, Any]) -> None:
     )
 
 
-render_results_page(st.session_state)
+render_results_page(st.session_state if RESULTS_VALID_KEY in st.session_state else get_app_state())
