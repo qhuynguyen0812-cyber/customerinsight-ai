@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from hashlib import sha256
-from io import BytesIO
+from io import BytesIO, StringIO
 from pathlib import Path
 from typing import Final
 
@@ -13,7 +14,10 @@ import pandas as pd
 from pandas.errors import EmptyDataError, ParserError
 
 CANONICAL_COLUMNS: Final[tuple[str, ...]] = (
-    "CustomerID", "Recency", "Frequency", "Monetary"
+    "CustomerID",
+    "Recency",
+    "Frequency",
+    "Monetary",
 )
 RFM_COLUMNS: Final[tuple[str, ...]] = ("Recency", "Frequency", "Monetary")
 _HEADER_LOOKUP: Final[dict[str, str]] = {
@@ -75,12 +79,50 @@ def _canonical_column_mapping(columns: pd.Index) -> dict[object, str]:
 
 
 def _iqr_outlier_count(series: pd.Series) -> int:
-    values = series.dropna()
+    values = series.replace([np.inf, -np.inf], np.nan).dropna()
     if values.empty:
         return 0
     q1, q3 = values.quantile([0.25, 0.75])
     iqr = q3 - q1
     return int(((values < q1 - 1.5 * iqr) | (values > q3 + 1.5 * iqr)).sum())
+
+
+def build_quality_report(raw_df: pd.DataFrame) -> DataQualityReport:
+    """Measure canonical data without modifying, imputing, or clipping it."""
+
+    missing = {
+        name: int(raw_df[name].isna().sum()) for name in CANONICAL_COLUMNS
+    }
+    non_numeric: dict[str, int] = {}
+    negative: dict[str, int] = {}
+    infinity: dict[str, int] = {}
+    numeric_columns: dict[str, pd.Series] = {}
+    for column in RFM_COLUMNS:
+        original = raw_df[column]
+        converted = pd.to_numeric(original, errors="coerce")
+        numeric_columns[column] = converted
+        non_numeric[column] = int((original.notna() & converted.isna()).sum())
+        infinity[column] = int(np.isinf(converted.dropna().to_numpy()).sum())
+        negative[column] = int((converted.dropna() < 0).sum())
+
+    customer_ids = raw_df["CustomerID"]
+    return DataQualityReport(
+        row_count=len(raw_df),
+        missing_by_column=missing,
+        duplicate_row_count=int(raw_df.duplicated().sum()),
+        duplicate_customer_id_count=int(customer_ids.duplicated(keep=False).sum()),
+        non_numeric_by_column=non_numeric,
+        negative_by_column=negative,
+        infinity_by_column=infinity,
+        iqr_outlier_by_column={
+            name: _iqr_outlier_count(numeric_columns[name]) for name in RFM_COLUMNS
+        },
+        zero_variance_columns=tuple(
+            name
+            for name in RFM_COLUMNS
+            if numeric_columns[name].dropna().nunique() <= 1
+        ),
+    )
 
 
 def validate_dataframe(df: pd.DataFrame, file_bytes: bytes) -> ValidatedDataset:
@@ -100,50 +142,34 @@ def validate_dataframe(df: pd.DataFrame, file_bytes: bytes) -> ValidatedDataset:
             f"CustomerID có {int(missing_ids.sum())} giá trị thiếu hoặc rỗng."
         )
 
-    duplicate_rows = int(raw_df.duplicated().sum())
     duplicate_ids = int(customer_ids.duplicated(keep=False).sum())
     if duplicate_ids:
         raise DataValidationError(
-            f"CustomerID có {duplicate_ids} dòng trùng; v1 yêu cầu ánh xạ 1:1."
+            f"CustomerID có {duplicate_ids} dòng trùng; TV1 yêu cầu ánh xạ 1:1."
         )
 
-    non_numeric: dict[str, int] = {}
-    negative: dict[str, int] = {}
-    infinity: dict[str, int] = {}
+    quality = build_quality_report(raw_df)
     for column in RFM_COLUMNS:
-        original = raw_df[column]
-        converted = pd.to_numeric(original, errors="coerce")
-        non_numeric[column] = int((original.notna() & converted.isna()).sum())
-        if non_numeric[column]:
+        if quality.non_numeric_by_column[column]:
             raise DataValidationError(
-                f"Cột {column} có {non_numeric[column]} giá trị không phải số."
+                f"Cột {column} có {quality.non_numeric_by_column[column]} "
+                "giá trị không phải số."
             )
-        infinity[column] = int(np.isinf(converted.dropna().to_numpy()).sum())
-        if infinity[column]:
+        if quality.infinity_by_column[column]:
             raise DataValidationError(
-                f"Cột {column} có {infinity[column]} giá trị vô cực."
+                f"Cột {column} có {quality.infinity_by_column[column]} giá trị vô cực."
             )
-        negative[column] = int((converted.dropna() < 0).sum())
-        if negative[column]:
+        if quality.negative_by_column[column]:
             raise DataValidationError(
-                f"Cột {column} có {negative[column]} giá trị âm."
+                f"Cột {column} có {quality.negative_by_column[column]} giá trị âm."
             )
-        raw_df[column] = converted
+        raw_df[column] = pd.to_numeric(raw_df[column], errors="coerce")
 
-    quality = DataQualityReport(
-        row_count=len(raw_df),
-        missing_by_column={name: int(raw_df[name].isna().sum()) for name in CANONICAL_COLUMNS},
-        duplicate_row_count=duplicate_rows,
-        duplicate_customer_id_count=duplicate_ids,
-        non_numeric_by_column=non_numeric,
-        negative_by_column=negative,
-        infinity_by_column=infinity,
-        iqr_outlier_by_column={name: _iqr_outlier_count(raw_df[name]) for name in RFM_COLUMNS},
-        zero_variance_columns=tuple(
-            name for name in RFM_COLUMNS if raw_df[name].dropna().nunique() <= 1
-        ),
+    return ValidatedDataset(
+        raw_df,
+        dataset_sha256(file_bytes),
+        build_quality_report(raw_df),
     )
-    return ValidatedDataset(raw_df, dataset_sha256(file_bytes), quality)
 
 
 def load_csv_bytes(file_bytes: bytes) -> ValidatedDataset:
@@ -154,14 +180,18 @@ def load_csv_bytes(file_bytes: bytes) -> ValidatedDataset:
     if not file_bytes:
         raise DataValidationError("Tệp CSV đang trống.")
     try:
-        df = pd.read_csv(BytesIO(file_bytes))
-    except (EmptyDataError, ParserError, UnicodeDecodeError) as exc:
+        text = file_bytes.decode("utf-8-sig")
+        header = next(csv.reader(StringIO(text), strict=True))
+        _canonical_column_mapping(pd.Index(header))
+        # Object dtype preserves identifiers such as "0012" exactly as supplied.
+        df = pd.read_csv(BytesIO(file_bytes), dtype=object)
+    except (EmptyDataError, ParserError, UnicodeDecodeError, csv.Error, StopIteration) as exc:
         raise DataValidationError("Không thể đọc tệp CSV hợp lệ.") from exc
     return validate_dataframe(df, file_bytes)
 
 
 def load_sample_dataset(path: str | Path) -> ValidatedDataset:
-    """Load the canonical sample from a project-controlled local path."""
+    """Load the canonical sample through the same byte-validation pipeline."""
 
     try:
         file_bytes = Path(path).read_bytes()

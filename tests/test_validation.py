@@ -5,7 +5,14 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
-from src.validation import CANONICAL_COLUMNS, DataValidationError, dataset_sha256, load_csv_bytes, load_sample_dataset
+from src.state import new_app_state, set_raw_dataset
+from src.validation import (
+    CANONICAL_COLUMNS,
+    DataValidationError,
+    dataset_sha256,
+    load_csv_bytes,
+    load_sample_dataset,
+)
 
 
 def csv_bytes(data):
@@ -27,6 +34,26 @@ def test_header_normalization_and_extra_columns():
     result = load_csv_bytes(payload)
     assert tuple(result.raw_df.columns) == CANONICAL_COLUMNS
     assert "Ignored" not in result.raw_df
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        "CustomerID,CustomerID,Recency,Frequency,Monetary",
+        "CustomerID, customerid ,Recency,Frequency,Monetary",
+    ],
+)
+def test_duplicate_canonical_headers_are_rejected(header):
+    payload = (header + "\nC1,C1,1,2,3\n").encode()
+    with pytest.raises(DataValidationError):
+        load_csv_bytes(payload)
+
+
+def test_customer_id_text_representation_is_preserved():
+    result = load_csv_bytes(
+        b"CustomerID,Recency,Frequency,Monetary\n0012,1,2,3\n"
+    )
+    assert result.raw_df.loc[0, "CustomerID"] == "0012"
 
 
 def test_missing_rfm_is_reported_and_not_imputed():
@@ -82,3 +109,17 @@ def test_canonical_sample_identity_and_rows():
     result = load_sample_dataset(sample)
     assert len(result.raw_df) == 720
     assert result.dataset_signature == "622a6cff9d8b41106268eb1e31e50b5259ccc1d4c318a15a5c496c8edce2a96f"
+
+
+def test_failed_validation_does_not_mutate_previous_valid_state():
+    state = new_app_state()
+    valid = load_csv_bytes(valid_bytes())
+    set_raw_dataset(state, valid.raw_df, valid.dataset_signature)
+    previous_df = state.raw_df
+    previous_signature = state.dataset_signature
+
+    with pytest.raises(DataValidationError):
+        load_csv_bytes(b"CustomerID,Recency,Frequency,Monetary\nC1,bad,2,3\n")
+
+    assert state.raw_df is previous_df
+    assert state.dataset_signature == previous_signature

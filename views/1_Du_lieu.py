@@ -8,7 +8,12 @@ import streamlit as st
 from components.states import get_app_state
 from components.workflow import consume_flash, set_flash
 from src.state import set_raw_dataset
-from src.validation import DataValidationError, load_csv_bytes, load_sample_dataset, validate_dataframe
+from src.validation import (
+    DataValidationError,
+    build_quality_report,
+    load_csv_bytes,
+    load_sample_dataset,
+)
 
 
 SAMPLE_PATH = Path(__file__).parents[1] / "data" / "sample_customers.csv"
@@ -24,7 +29,7 @@ def commit_validated(result) -> None:
 
 
 def render_quality(raw_df: pd.DataFrame) -> None:
-    report = validate_dataframe(raw_df, b"").quality_report
+    report = build_quality_report(raw_df)
     st.subheader("Chất lượng dữ liệu")
     col1, col2, col3 = st.columns(3)
     col1.metric("Số khách hàng", report.row_count)
