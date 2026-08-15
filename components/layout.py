@@ -1,7 +1,9 @@
-"""Shared layout/navigation helpers for TV5."""
+"""Shared layout and native navigation helpers for TV5."""
+
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 import streamlit as st
 
@@ -19,19 +21,20 @@ NAV_ITEMS = [
 ]
 
 
-def build_navigation():
-    """Use Streamlit's native navigation when page files exist."""
-    pages = []
+def build_navigation() -> Any | None:
+    """Build the application's single native multipage navigation object."""
+
     views_dir = Path(__file__).resolve().parents[1] / "views"
-    for filename, title in NAV_ITEMS:
-        page = views_dir / filename
-        if page.exists():
-            pages.append(st.Page(str(page), title=title, icon="📄"))
-    if pages:
-        return st.navigation(pages)
-    return None
+    pages = [
+        st.Page(str(views_dir / filename), title=title, icon="📄")
+        for filename, title in NAV_ITEMS
+        if (views_dir / filename).is_file()
+    ]
+    return st.navigation(pages) if pages else None
 
 
-def render_sidebar() -> None:
+def render_sidebar(state=None) -> None:
+    """Render branding and canonical progress without creating another navigator."""
+
     st.sidebar.title("CustomerInsight AI")
-    render_progress()
+    render_progress(state)

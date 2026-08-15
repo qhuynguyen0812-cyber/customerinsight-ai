@@ -37,7 +37,10 @@ FLASH_KEY = "customerinsight_flash"
 def workflow_stage(state: AppState) -> WorkflowStage:
     """Calculate the highest valid completed stage from state, never from UI."""
 
-    if state.results is not None:
+    if all(
+        value is not None
+        for value in (state.results, state.cluster_profiles, state.run_metadata)
+    ):
         return WorkflowStage.RESULTS_READY
     if all(value is not None for value in (state.model, state.labels, state.cluster_profiles)):
         return WorkflowStage.CLUSTERED
@@ -54,6 +57,22 @@ def progress_fraction(state: AppState) -> float:
     """Return Streamlit-friendly progress in the inclusive ``0.0..1.0`` range."""
 
     return workflow_stage(state) / WorkflowStage.RESULTS_READY
+
+
+def render_progress(state: AppState | None = None) -> None:
+    """Render canonical workflow progress in the Streamlit sidebar."""
+
+    import streamlit as st
+
+    if state is None:
+        from components.states import get_app_state
+
+        state = get_app_state()
+    stage = workflow_stage(state)
+    st.sidebar.progress(
+        progress_fraction(state),
+        text=f"Workflow: {stage.name.replace('_', ' ').title()} ({int(stage)}/5)",
+    )
 
 
 def can_access(state: AppState, destination: str) -> GateResult:

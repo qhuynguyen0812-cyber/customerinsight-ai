@@ -148,7 +148,9 @@ def test_k_analysis_commit_and_selected_k_invalidation() -> None:
     metrics = analyze_candidate_k(state.scaled_matrix, 2, 4)
     set_k_analysis(state, metrics, recommend_k(metrics))
     set_selected_k(state, 3)
-    set_clustering_result(state, "model", np.zeros(720), "profiles")
+    set_clustering_result(
+        state, "model", np.zeros(720), "profiles", run_metadata={"run": "current"}
+    )
     set_results(state, "results", "export")
 
     set_selected_k(state, 2)
