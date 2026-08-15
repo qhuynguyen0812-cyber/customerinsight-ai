@@ -6,7 +6,7 @@ from collections.abc import Mapping
 
 import streamlit as st
 
-from components.states import get_app_state
+from components.states import APP_STATE_KEY, get_app_state
 
 from components.results_export import (
     ResultContractError,
@@ -29,7 +29,10 @@ def render_results_page(state) -> None:
     """Render only outputs declared current by the upstream state owner."""
     st.title("Kết quả phân cụm")
     legacy = isinstance(state, Mapping)
-    results_valid = state.get(RESULTS_VALID_KEY) is True if legacy else state.results is not None
+    results_valid = state.get(RESULTS_VALID_KEY) is True if legacy else all(
+        value is not None
+        for value in (state.results, state.cluster_profiles, state.run_metadata)
+    )
     if not results_valid:
         st.info("Chưa có kết quả hợp lệ. Hãy hoàn tất bước Phân cụm trước khi xem hoặc xuất dữ liệu.")
         return
@@ -42,6 +45,15 @@ def render_results_page(state) -> None:
         st.error(f"Không thể hiển thị kết quả hiện tại: {error}")
         return
 
+    profile = state.get(CLUSTER_PROFILES_KEY) if legacy else state.cluster_profiles
+    metadata = state.get(RUN_METADATA_KEY) if legacy else state.run_metadata
+    try:
+        current_profile = validate_profile(profile)
+        current_metadata = available_run_metadata(metadata)
+    except ResultContractError as error:
+        st.error(f"Kết quả hiện tại chưa đầy đủ: {error}")
+        return
+
     st.subheader("Khám phá khách hàng")
     query = st.text_input("Tìm CustomerID", key="tv6_customer_query")
     visible = customers
@@ -51,22 +63,10 @@ def render_results_page(state) -> None:
         ]
     st.dataframe(visible, width="stretch", hide_index=True)
 
-    profile = state.get(CLUSTER_PROFILES_KEY) if legacy else state.cluster_profiles
-    if profile is not None:
-        try:
-            st.subheader("Hồ sơ cụm")
-            st.dataframe(validate_profile(profile), width="stretch", hide_index=True)
-        except ResultContractError as error:
-            st.warning(f"Hồ sơ cụm chưa sẵn sàng: {error}")
-
-    metadata = state.get(RUN_METADATA_KEY) if legacy else state.run_metadata
-    if metadata is not None:
-        try:
-            current_metadata = available_run_metadata(metadata)
-            st.subheader("Thông tin lần chạy")
-            st.json(current_metadata)
-        except ResultContractError as error:
-            st.warning(f"Thông tin lần chạy chưa sẵn sàng: {error}")
+    st.subheader("Hồ sơ cụm")
+    st.dataframe(current_profile, width="stretch", hide_index=True)
+    st.subheader("Thông tin lần chạy")
+    st.json(current_metadata)
 
     st.download_button(
         "Tải CSV kết quả khách hàng",
@@ -77,4 +77,11 @@ def render_results_page(state) -> None:
     )
 
 
-render_results_page(st.session_state if RESULTS_VALID_KEY in st.session_state else get_app_state())
+def _page_state():
+    """Prefer canonical AppState; use flat keys only as a compatibility adapter."""
+    if APP_STATE_KEY in st.session_state:
+        return get_app_state()
+    return st.session_state
+
+
+render_results_page(_page_state())

@@ -99,8 +99,8 @@ def validate_customer_results(results: pd.DataFrame) -> pd.DataFrame:
         raise ResultContractError("CustomerID cannot be missing.")
     if results["CustomerID"].duplicated().any():
         raise ResultContractError("CustomerID must map one-to-one to results.")
-    if results[["Recency", "Frequency", "Monetary", "Cluster", "SegmentName"]].isna().any().any():
-        raise ResultContractError("Customer results cannot contain incomplete labels or RFM values.")
+    if results[["Cluster", "SegmentName"]].isna().any().any():
+        raise ResultContractError("Customer results cannot contain incomplete assignments.")
 
     return results.loc[:, CUSTOMER_RESULT_COLUMNS].copy(deep=True)
 
@@ -120,6 +120,10 @@ def validate_profile(profile: pd.DataFrame) -> pd.DataFrame:
         raise ResultContractError("Cluster profile is missing: " + ", ".join(missing))
     if profile.empty:
         raise ResultContractError("Cluster profile is empty.")
+    if profile[PROFILE_REQUIRED_COLUMNS].isna().any().any():
+        raise ResultContractError("Cluster profile contains null required values.")
+    if profile["Cluster"].duplicated().any():
+        raise ResultContractError("Cluster profile must contain one row per cluster.")
     return profile.copy(deep=True)
 
 

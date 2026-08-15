@@ -123,6 +123,8 @@ def run_clustering_workflow(state: AppState) -> dict[str, Any]:
         raise ValueError("Scaled features are required before clustering.")
     if state.selected_k is None:
         raise ValueError("A confirmed K is required before clustering.")
+    if state.raw_df is None:
+        raise ValueError("Validated raw customers are required before clustering.")
     customers = _validated_business_data(state.processed_df)
     if len(state.scaled_matrix) != len(customers):
         raise ValueError("Scaled features and processed customer rows are not aligned.")
@@ -138,7 +140,9 @@ def run_clustering_workflow(state: AppState) -> dict[str, Any]:
             profiles.set_index("Cluster")["SegmentName"]
         ).to_numpy(),
     )
-    results = build_customer_results(customers, assignments)
+    results = build_customer_results(
+        state.raw_df.loc[:, ["CustomerID", *RFM_COLUMNS]], assignments
+    )
     effective = get_default_solver_kwargs()
     if isinstance(state.solver_preferences, Mapping):
         effective.update(state.solver_preferences)

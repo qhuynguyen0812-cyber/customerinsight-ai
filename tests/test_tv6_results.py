@@ -45,6 +45,23 @@ def test_customer_mapping_joins_current_assignments_to_raw_rfm(results: pd.DataF
     pd.testing.assert_frame_equal(mapped, results)
 
 
+def test_customer_mapping_preserves_raw_order_and_unimputed_values() -> None:
+    raw = pd.DataFrame({
+        "CustomerID": ["C-002", "C-001"],
+        "Recency": [None, 999.0],
+        "Frequency": [2.0, 3.0],
+        "Monetary": [40.0, 5000.0],
+    })
+    assignments = pd.DataFrame({
+        "CustomerID": ["C-001", "C-002"],
+        "Cluster": [1, 0],
+        "SegmentName": ["High", "Low"],
+    })
+    mapped = build_customer_results(raw, assignments)
+    assert mapped["CustomerID"].tolist() == ["C-002", "C-001"]
+    pd.testing.assert_frame_equal(mapped.iloc[:, :4], raw)
+
+
 def test_customer_mapping_rejects_stale_or_incomplete_assignments(results: pd.DataFrame) -> None:
     raw = results.loc[:, ["CustomerID", "Recency", "Frequency", "Monetary"]]
     assignments = results.loc[:, ["CustomerID", "Cluster", "SegmentName"]].iloc[[0]]
@@ -52,9 +69,27 @@ def test_customer_mapping_rejects_stale_or_incomplete_assignments(results: pd.Da
         build_customer_results(raw, assignments)
 
 
+@pytest.mark.parametrize("kind", ["duplicate", "null", "unknown"])
+def test_customer_mapping_rejects_invalid_assignment_ids(
+    results: pd.DataFrame, kind: str
+) -> None:
+    raw = results.loc[:, ["CustomerID", "Recency", "Frequency", "Monetary"]]
+    assignments = results.loc[:, ["CustomerID", "Cluster", "SegmentName"]].copy()
+    if kind == "duplicate":
+        assignments.loc[1, "CustomerID"] = assignments.loc[0, "CustomerID"]
+    elif kind == "null":
+        assignments.loc[1, "CustomerID"] = None
+    else:
+        assignments.loc[1, "CustomerID"] = "STALE"
+    with pytest.raises(ResultContractError):
+        build_customer_results(raw, assignments)
+
+
 def test_customer_export_has_bom_no_index_and_round_trips(results: pd.DataFrame) -> None:
     payload = customer_results_to_csv_bytes(results)
+    assert payload == customer_results_to_csv_bytes(results)
     assert payload.startswith(codecs.BOM_UTF8)
+    assert b"\r\n" not in payload
     exported = pd.read_csv(BytesIO(payload), encoding="utf-8-sig", dtype={"CustomerID": str})
     assert list(exported.columns) == CUSTOMER_RESULT_COLUMNS
     assert not any(column.startswith("Unnamed:") for column in exported.columns)
