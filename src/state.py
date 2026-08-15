@@ -120,6 +120,8 @@ def invalidate_from(state: AppState, key: str, *, include_key: bool = False) -> 
 def set_raw_dataset(state: AppState, raw_df: Any, dataset_signature: str) -> None:
     """Atomically replace the validated dataset and clear all derived artifacts."""
 
+    if raw_df is None or not dataset_signature:
+        raise ValueError("A validated dataset and signature are required.")
     invalidate_from(state, "raw_df", include_key=True)
     state.raw_df = raw_df
     state.dataset_signature = dataset_signature
@@ -136,6 +138,8 @@ def set_preprocessed_data(
 
     if state.raw_df is None or state.dataset_signature is None:
         raise ValueError("A validated dataset is required before preprocessing.")
+    if processed_df is None or scaled_matrix is None or not preprocessing_signature:
+        raise ValueError("Processed data, scaled features, and a signature are required.")
     invalidate_from(state, "processed_df", include_key=True)
     state.processed_df = processed_df
     state.preprocessing_signature = preprocessing_signature
@@ -148,6 +152,8 @@ def set_k_analysis(state: AppState, k_metrics: Any, recommended_k: int | None) -
 
     if state.scaled_matrix is None:
         raise ValueError("Scaled features are required before K analysis.")
+    if k_metrics is None:
+        raise ValueError("K analysis metrics are required.")
     invalidate_from(state, "k_metrics", include_key=True)
     state.k_metrics = k_metrics
     state.recommended_k = recommended_k
@@ -184,6 +190,10 @@ def set_clustering_result(
 
     if state.scaled_matrix is None or state.selected_k is None:
         raise ValueError("Scaled features and a confirmed K are required before clustering.")
+    if model is None or labels is None or cluster_profiles is None:
+        raise ValueError("Model, labels, and cluster profiles are required.")
+    if results is not None and run_metadata is None:
+        raise ValueError("Run metadata is required when clustering results are provided.")
     invalidate_from(state, "model", include_key=True)
     state.model = model
     state.labels = labels
@@ -195,8 +205,12 @@ def set_clustering_result(
 def set_results(state: AppState, results: Any, export_payload: Any | None = None) -> None:
     """Commit TV6 results only after a valid clustering/profile result exists."""
 
-    if state.cluster_profiles is None:
-        raise ValueError("Cluster profiles are required before publishing results.")
+    if state.model is None or state.cluster_profiles is None or state.run_metadata is None:
+        raise ValueError(
+            "A clustering result, cluster profiles, and run metadata are required before publishing results."
+        )
+    if results is None:
+        raise ValueError("Results are required before publishing them.")
     invalidate_from(state, "results", include_key=True)
     state.results = results
     state.export_payload = export_payload

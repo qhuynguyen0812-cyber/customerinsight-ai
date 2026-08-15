@@ -140,7 +140,9 @@ def test_successful_commit_uses_canonical_setter_and_invalidates_downstream() ->
     set_preprocessed_data(state, pd.DataFrame(), np.zeros((1, 3)), "old")
     set_k_analysis(state, {"scores": [1]}, 2)
     set_selected_k(state, 2)
-    set_clustering_result(state, "model", [0], "profiles")
+    set_clustering_result(
+        state, "model", [0], "profiles", run_metadata={"run": "current"}
+    )
     set_results(state, "results", "export")
 
     set_preprocessed_data(
