@@ -23,7 +23,7 @@ CUSTOM_CSS = """
 }
 
 html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--on-surface);
 }
 
@@ -130,6 +130,37 @@ html, body, [class*="css"] {
     font-weight: 700;
     font-size: 14px;
     margin-bottom: 12px;
+}
+
+/* Status Banner */
+.ci-banner {
+    background-color: var(--surface-container-low);
+    border: 1px solid var(--outline-variant);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+/* Stat Box */
+.ci-stat-box {
+    background-color: #ffffff;
+    border: 1px solid var(--outline-variant);
+    border-radius: 12px;
+    padding: 10px 18px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+/* Assessment Box */
+.ci-assessment-box {
+    background: linear-gradient(135deg, rgba(53, 37, 205, 0.04) 0%, rgba(139, 92, 246, 0.04) 100%);
+    border: 1px solid rgba(53, 37, 205, 0.18);
+    border-radius: 12px;
+    padding: 18px 20px;
 }
 
 /* Streamlit button custom styles */
