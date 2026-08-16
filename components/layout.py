@@ -7,6 +7,7 @@ from typing import Any
 
 import streamlit as st
 
+from components.theme import apply_custom_theme
 from components.workflow import render_progress
 
 
@@ -17,7 +18,6 @@ NAV_ITEMS = [
     ("3_Chon_K.py", "Chọn K"),
     ("4_Phan_cum.py", "Phân cụm"),
     ("5_Ket_qua.py", "Kết quả"),
-    ("6_Thuat_toan.py", "Thuật toán"),
 ]
 
 
@@ -36,5 +36,18 @@ def build_navigation() -> Any | None:
 def render_sidebar(state=None) -> None:
     """Render branding and canonical progress without creating another navigator."""
 
-    st.sidebar.title("CustomerInsight AI")
+    apply_custom_theme()
+    st.sidebar.markdown(
+        """
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+            <div style="width: 36px; height: 36px; border-radius: 8px; background: #3525cd; color: #ffffff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px;">CI</div>
+            <div>
+                <div style="font-weight: 700; font-size: 15px; color: #3525cd; line-height: 1.2;">CustomerInsight AI</div>
+                <div style="font-size: 10px; color: #464555; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;">Enterprise Analytics</div>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     render_progress(state)
+
