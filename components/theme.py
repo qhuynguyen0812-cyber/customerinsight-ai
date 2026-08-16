@@ -181,6 +181,25 @@ html, body, [class*="css"] {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
 }
 
+/* Cluster Profile Card */
+.ci-profile-card {
+    background-color: var(--surface-container-lowest);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(53, 37, 205, 0.03);
+    transition: all 0.2s ease-in-out;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.ci-profile-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(53, 37, 205, 0.08);
+}
+
 /* Streamlit button custom styles */
 .stButton > button[kind="primary"] {
     background-color: #3525cd !important;
