@@ -163,6 +163,24 @@ html, body, [class*="css"] {
     padding: 18px 20px;
 }
 
+/* Before / After Cards */
+.ci-before-after-card {
+    background-color: var(--surface-container-lowest);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 2px 8px rgba(53, 37, 205, 0.03);
+}
+
+/* Pipeline Centerpiece */
+.ci-pipeline-card {
+    background-color: var(--surface-container-lowest);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+}
+
 /* Streamlit button custom styles */
 .stButton > button[kind="primary"] {
     background-color: #3525cd !important;
