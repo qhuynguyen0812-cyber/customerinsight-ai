@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CustomerInsight AI - Khám phá dữ liệu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface-dim": "#cbdbf5",
+                    "on-surface-variant": "#464555",
+                    "surface-tint": "#4d44e3",
+                    "on-tertiary-container": "#ffd2be",
+                    "background": "#f8f9ff",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed": "#89f5e7",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary-container": "#dad7ff",
+                    "on-background": "#0b1c30",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#006f66",
+                    "on-tertiary": "#ffffff",
+                    "surface": "#f8f9ff",
+                    "secondary-container": "#86f2e4",
+                    "outline": "#777587",
+                    "on-surface": "#0b1c30",
+                    "surface-container-lowest": "#ffffff",
+                    "primary-container": "#4f46e5",
+                    "tertiary-fixed": "#ffdbcc",
+                    "inverse-primary": "#c3c0ff",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "surface-variant": "#d3e4fe",
+                    "on-primary": "#ffffff",
+                    "inverse-surface": "#213145",
+                    "secondary": "#006a61",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-secondary-fixed": "#00201d",
+                    "primary-fixed": "#e2dfff",
+                    "on-tertiary-fixed": "#351000",
+                    "inverse-on-surface": "#eaf1ff",
+                    "tertiary-container": "#a44100",
+                    "surface-container-low": "#eff4ff",
+                    "primary": "#3525cd",
+                    "surface-container": "#e5eeff",
+                    "on-error-container": "#93000a",
+                    "on-error": "#ffffff",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-secondary-fixed-variant": "#005049",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "surface-bright": "#f8f9ff",
+                    "tertiary": "#7e3000",
+                    "on-secondary": "#ffffff",
+                    "outline-variant": "#c7c4d8",
+                    "on-primary-fixed": "#0f0069",
+                    "error": "#ba1a1a"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "sidebar-width": "280px",
+                    "lg": "24px",
+                    "base": "8px",
+                    "md": "16px",
+                    "2xl": "48px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "grid-gutter": "24px",
+                    "xl": "32px",
+                    "container-padding": "32px"
+                },
+                "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"]
+                },
+                "fontSize": {
+                    "headline-lg": ["32px", { "lineHeight": "1.25", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                    "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }]
+                }
+            }
+        }
+    }
+</script>
+<style>
+    .pipeline-fill {
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .pipeline-step {
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .stagger-item {
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes fadeUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .delay-100 { animation-delay: 100ms; }
+    .delay-200 { animation-delay: 200ms; }
+    .delay-300 { animation-delay: 300ms; }
+    .delay-400 { animation-delay: 400ms; }
+    .delay-500 { animation-delay: 500ms; }
+
+    @media (min-width: 768px) {
+        body > header { margin-left: 280px; width: calc(100% - 280px); }
+        body > div > aside { position: fixed; inset: 0 auto 0 0; height: 100vh !important; top: 0 !important; z-index: 60; }
+        body > div > main { margin-left: 280px; width: calc(100% - 280px); flex: none; }
+    }
+</style>
+</head>
+<body class="bg-background text-on-background font-body-md min-h-screen flex flex-col antialiased">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex justify-between items-center px-lg h-16">
+    <div class="flex items-center gap-md lg:hidden">
+        <button class="text-on-surface-variant hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+    </div>
+    <div class="hidden lg:flex items-center gap-xl">
+        <div class="flex gap-lg h-full items-center">
+            <span class="text-on-surface-variant h-full flex items-center px-sm font-label-sm text-label-sm">Dự án / Customer Segmentation / Khám phá dữ liệu</span>
+        </div>
+    </div>
+</header>
+
+<div class="flex flex-1 pt-16">
+<!-- Side Navigation Bar -->
+<aside class="w-sidebar-width bg-surface-container-low border-r border-outline-variant flex flex-col justify-between py-lg shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40">
+    <div class="space-y-6">
+        <div class="px-lg flex items-center gap-md">
+            <div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-lg shadow-sm">
+                CI
+            </div>
+            <div>
+                <h1 class="font-title-md text-title-md text-on-surface leading-tight">CustomerInsight AI</h1>
+                <p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Enterprise Analytics</p>
+            </div>
+        </div>
+        <nav class="space-y-2">
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Tổng quan
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/data">
+                <span class="material-symbols-outlined" data-icon="database">database</span>
+                Dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-primary font-bold border-l-4 border-primary bg-primary-container/10 px-lg py-md cursor-pointer active:scale-95 font-body-md text-body-md transition-all duration-200" href="/eda">
+                <span class="material-symbols-outlined" data-icon="explore" style="font-variation-settings: 'FILL' 1;">explore</span>
+                Khám phá dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/choose-k">
+                <span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+                Chọn K
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/clustering">
+                <span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+                Phân cụm
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/results">
+                <span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Kết quả
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-lg mt-auto">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <div class="font-label-sm text-label-sm text-on-surface-variant mb-2 font-semibold">Tiến độ phân tích</div>
+            <div class="w-full bg-surface-container-high rounded-full h-2 mb-2">
+                <div id="workflow-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width: 20%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="workflow-progress-count" class="font-label-sm text-[10px] text-on-surface-variant">1 / 5 bước hoàn tất</span>
+                <span id="workflow-progress-pct" class="font-label-sm text-[10px] text-primary font-bold">20%</span>
+            </div>
+            <p id="workflow-progress-next" class="font-label-sm text-[10px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-2">Tiếp theo: Khám phá dữ liệu</p>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Canvas -->
+<main class="flex-1 p-container-padding overflow-y-auto bg-background min-h-[calc(100vh-64px)]">
+<div class="max-w-[1200px] mx-auto space-y-xl pb-2xl">
+
+    <!-- Header Section -->
+    <header class="flex flex-col md:flex-row md:items-end justify-between gap-lg stagger-item">
+        <div>
+            <span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold mb-2 block">BƯỚC 02 · TIỀN XỬ LÝ</span>
+            <h1 class="font-headline-lg text-headline-lg text-on-background mb-3">Chuẩn hóa dữ liệu RFM</h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Làm sạch, xử lý ngoại lệ và chuẩn hóa các đặc trưng trước khi phân cụm.</p>
+        </div>
+        <div class="flex items-center gap-sm bg-surface-container-highest text-on-surface px-md py-2 rounded-full shadow-sm">
+            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
+            <span class="font-label-sm text-label-sm font-bold"><span id="header-customer-count">720</span> khách hàng</span>
+        </div>
+    </header>
+
+    <!-- Error Alert Box -->
+    <div id="eda-error" class="hidden bg-error-container text-on-error-container border border-error/30 rounded-xl p-4 text-sm font-medium"></div>
+
+    <!-- Action Prompt Banner (Before Preprocessing) -->
+    <div id="preprocess-action-banner" class="bg-surface-container-lowest rounded-xl border-2 border-primary/30 p-lg shadow-sm flex flex-col md:flex-row items-center justify-between gap-md stagger-item delay-100">
+        <div class="flex items-center gap-md">
+            <div class="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                <span class="material-symbols-outlined text-[28px]" style="font-variation-settings: 'FILL' 1;">auto_fix_high</span>
+            </div>
+            <div>
+                <h3 class="font-title-md text-base font-semibold text-on-surface">Dữ liệu thô đã sẵn sàng cho tiền xử lý</h3>
+                <p class="font-body-md text-sm text-on-surface-variant">Thực hiện Median Imputation, IQR Clipping và StandardScaler trên 3 đặc trưng Recency, Frequency, Monetary.</p>
+            </div>
+        </div>
+        <button id="btn-run-preprocess" class="bg-primary text-on-primary font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap">
+            <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+            Xử lý dữ liệu
+        </button>
+    </div>
+
+    <!-- Post-Preprocess Results Container -->
+    <div id="eda-results-container" class="space-y-xl">
+
+        <!-- Pipeline Centerpiece -->
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm stagger-item delay-100">
+            <h3 class="font-title-md text-title-md text-on-surface mb-lg">Quy trình chuẩn bị dữ liệu</h3>
+            <div class="relative pt-md pb-md">
+                <!-- Background Line -->
+                <div class="absolute top-1/2 left-[10%] right-[10%] h-1 bg-outline-variant/30 -translate-y-1/2 rounded-full"></div>
+                <!-- Animated Fill Line -->
+                <div class="absolute top-1/2 left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full pipeline-fill" id="pipeline-progress" style="width: 0%;"></div>
+
+                <div class="relative flex justify-between">
+                    <!-- Step 1 -->
+                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="100">
+                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">dataset</span>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Dữ liệu gốc</p>
+                            <p class="text-[10px] text-on-surface-variant mt-1"><span id="pipe-row-count">720</span> khách hàng, 3 RFM</p>
+                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
+                        </div>
+                    </div>
+                    <!-- Step 2 -->
+                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="300">
+                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">cleaning_services</span>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Giá trị thiếu</p>
+                            <p class="text-[10px] text-on-surface-variant mt-1">Median Imputation</p>
+                            <p class="text-[10px] text-on-surface-variant"><span id="pipe-missing-count">0</span> giá trị thiếu</p>
+                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
+                        </div>
+                    </div>
+                    <!-- Step 3 -->
+                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="500">
+                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">content_cut</span>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Ngoại lệ</p>
+                            <p class="text-[10px] text-on-surface-variant mt-1">IQR Clipping</p>
+                            <p class="text-[10px] text-on-surface-variant"><span id="pipe-outlier-count">117</span> được phát hiện</p>
+                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
+                        </div>
+                    </div>
+                    <!-- Step 4 -->
+                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="700">
+                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">scale</span>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Chuẩn hóa</p>
+                            <p class="text-[10px] text-on-surface-variant mt-1">StandardScaler</p>
+                            <p class="text-[10px] text-on-surface-variant">R · F · M (mean=0, std=1)</p>
+                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
+                        </div>
+                    </div>
+                    <!-- Step 5 -->
+                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="900">
+                        <div class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest relative">
+                            <div class="absolute inset-0 rounded-full border-2 border-secondary opacity-20"></div>
+                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">model_training</span>
+                        </div>
+                        <div class="text-center">
+                            <p class="font-label-sm text-label-sm font-bold text-secondary">Model Ready</p>
+                            <p class="text-[10px] text-on-surface-variant mt-1">Sẵn sàng phân cụm</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Final Success Panel & Tech Details -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-lg stagger-item delay-200">
+            <div class="col-span-2 bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-sm mb-md">
+                        <span class="material-symbols-outlined text-secondary text-[28px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                        <h3 class="font-title-md text-title-md text-on-surface">Dữ liệu đã sẵn sàng cho phân tích K</h3>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-lg mb-lg">
+                        <div>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Số lượng khách hàng</p>
+                            <p id="stat-row-count" class="font-headline-lg text-headline-lg text-on-surface font-bold">720</p>
+                        </div>
+                        <div>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Số lượng đặc trưng</p>
+                            <p id="stat-feature-count" class="font-headline-lg text-headline-lg text-on-surface font-bold">3</p>
+                        </div>
+                        <div>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Giá trị thiếu</p>
+                            <p id="stat-missing-count" class="font-headline-lg text-headline-lg text-on-surface font-bold">0</p>
+                        </div>
+                        <div>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Trạng thái</p>
+                            <span class="inline-block bg-secondary-container text-on-secondary-container font-label-sm text-label-sm px-3 py-1 rounded-full font-bold mt-1">Model Ready</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-span-1 bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm">
+                <h4 class="font-title-md text-title-md text-on-surface mb-md">Chi tiết tiền xử lý</h4>
+                <div class="space-y-sm">
+                    <details class="group cursor-pointer" open>
+                        <summary class="flex justify-between items-center font-label-sm text-label-sm font-semibold text-on-surface p-2 hover:bg-surface-container rounded-md">
+                            Median Imputation
+                            <span class="material-symbols-outlined text-outline group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <p class="font-body-md text-on-surface-variant p-2 text-sm">Điền giá trị thiếu bằng trung vị cụ thể cho các đặc trưng RFM để giảm thiểu ảnh hưởng của các giá trị ngoại lệ cực đoan trong phân phối ban đầu.</p>
+                    </details>
+                    <details class="group cursor-pointer">
+                        <summary class="flex justify-between items-center font-label-sm text-label-sm font-semibold text-on-surface p-2 hover:bg-surface-container rounded-md">
+                            IQR Clipping
+                            <span class="material-symbols-outlined text-outline group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <p class="font-body-md text-on-surface-variant p-2 text-sm">Giới hạn các giá trị nằm ngoài khoảng (Q1 - 1.5*IQR) đến (Q3 + 1.5*IQR) để tránh K-Means bị lệch bởi outliers.</p>
+                    </details>
+                    <details class="group cursor-pointer">
+                        <summary class="flex justify-between items-center font-label-sm text-label-sm font-semibold text-on-surface p-2 hover:bg-surface-container rounded-md">
+                            StandardScaler
+                            <span class="material-symbols-outlined text-outline group-open:rotate-180 transition-transform">expand_more</span>
+                        </summary>
+                        <div class="font-body-md text-on-surface-variant p-2 text-sm">
+                            <p class="mb-2">Chuẩn hóa dữ liệu về mean=0 và std=1 đảm bảo các đặc trưng đóng góp công bằng vào khoảng cách Euclidean.</p>
+                            <ul class="list-disc pl-4 text-[13px]">
+                                <li><span class="font-semibold text-on-surface">Đặc trưng được chuẩn hóa:</span> Recency · Frequency · Monetary</li>
+                                <li><span class="font-semibold text-on-surface">CustomerID:</span> Không chuẩn hóa</li>
+                            </ul>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </div>
+
+        <!-- Before/After Section -->
+        <section class="stagger-item delay-300">
+            <h3 class="font-title-md text-title-md text-on-surface mb-md">Trước và sau tiền xử lý</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+                <!-- Recency Card -->
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
+                    <div class="flex justify-between items-center mb-sm">
+                        <h4 class="font-label-sm text-label-sm font-bold text-on-surface uppercase">RECENCY</h4>
+                        <span class="bg-surface-container text-on-surface-variant px-2 py-1 rounded text-[10px] font-semibold">Đã giới hạn ngoại lệ</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-sm text-sm">
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Trước (Max)</p>
+                            <p id="recency-raw-max" class="font-body-md text-error line-through">615</p>
+                        </div>
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Sau IQR (Clipped Max)</p>
+                            <p id="recency-clipped-max" class="font-body-md text-secondary font-semibold">235</p>
+                            <p id="recency-clipped-pct" class="text-on-surface-variant text-[10px] mt-1">Giới hạn cực trị: 61.8%</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-outline-variant/30 text-[11px] text-on-surface-variant flex justify-between">
+                        <span>Q1: <strong id="recency-q1">20</strong> · Q3: <strong id="recency-q3">106</strong></span>
+                        <span>Ngoại lệ: <strong id="recency-outliers" class="text-amber-600">53</strong></span>
+                    </div>
+                </div>
+                <!-- Frequency Card -->
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
+                    <div class="flex justify-between items-center mb-sm">
+                        <h4 class="font-label-sm text-label-sm font-bold text-on-surface uppercase">FREQUENCY</h4>
+                        <span class="bg-surface-container text-on-surface-variant px-2 py-1 rounded text-[10px] font-semibold">Đã giới hạn ngoại lệ</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-sm text-sm">
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Trước (Max)</p>
+                            <p id="frequency-raw-max" class="font-body-md text-error line-through">75</p>
+                        </div>
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Sau IQR (Clipped Max)</p>
+                            <p id="frequency-clipped-max" class="font-body-md text-secondary font-semibold">25.5</p>
+                            <p id="frequency-clipped-pct" class="text-on-surface-variant text-[10px] mt-1">Giới hạn cực trị: 66.0%</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-outline-variant/30 text-[11px] text-on-surface-variant flex justify-between">
+                        <span>Q1: <strong id="frequency-q1">3</strong> · Q3: <strong id="frequency-q3">12</strong></span>
+                        <span>Ngoại lệ: <strong id="frequency-outliers" class="text-amber-600">13</strong></span>
+                    </div>
+                </div>
+                <!-- Monetary Card -->
+                <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm">
+                    <div class="flex justify-between items-center mb-sm">
+                        <h4 class="font-label-sm text-label-sm font-bold text-on-surface uppercase">MONETARY</h4>
+                        <span class="bg-surface-container text-on-surface-variant px-2 py-1 rounded text-[10px] font-semibold">Đã giới hạn ngoại lệ</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-sm text-sm">
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Trước (Max)</p>
+                            <p id="monetary-raw-max" class="font-body-md text-error line-through">18000</p>
+                        </div>
+                        <div>
+                            <p class="text-on-surface-variant text-[10px] uppercase font-bold mb-1">Sau IQR (Clipped Max)</p>
+                            <p id="monetary-clipped-max" class="font-body-md text-secondary font-semibold">2986.27</p>
+                            <p id="monetary-clipped-pct" class="text-on-surface-variant text-[10px] mt-1">Giới hạn cực trị: 83.4%</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-outline-variant/30 text-[11px] text-on-surface-variant flex justify-between">
+                        <span>Q1: <strong id="monetary-q1">242.82</strong> · Q3: <strong id="monetary-q3">1340.2</strong></span>
+                        <span>Ngoại lệ: <strong id="monetary-outliers" class="text-amber-600">51</strong></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RFM Distribution Section -->
+        <section class="stagger-item delay-400">
+            <h3 class="font-title-md text-title-md text-on-surface mb-md">Phân phối RFM</h3>
+            <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden">
+                <!-- Feature Tabs -->
+                <div class="flex border-b border-outline-variant/50 bg-surface-bright">
+                    <button id="tab-recency" class="flex-1 py-3 px-4 text-center font-label-sm font-bold text-primary border-b-2 border-primary bg-primary/5 transition-all">Recency</button>
+                    <button id="tab-frequency" class="flex-1 py-3 px-4 text-center font-label-sm font-bold text-on-surface-variant hover:bg-surface-container/50 transition-all">Frequency</button>
+                    <button id="tab-monetary" class="flex-1 py-3 px-4 text-center font-label-sm font-bold text-on-surface-variant hover:bg-surface-container/50 transition-all">Monetary</button>
+                </div>
+
+                <!-- Charts Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg p-lg">
+                    <!-- Left: Histogram Chart -->
+                    <div class="bg-surface-container/10 rounded-xl p-md border border-outline-variant/30 flex flex-col">
+                        <div class="flex justify-between items-center mb-2 px-2">
+                            <span class="font-label-sm text-xs font-bold text-on-surface uppercase">Biểu đồ phân phối (Histogram)</span>
+                            <span id="hist-legend" class="text-[11px] text-on-surface-variant">Dữ liệu sau khi xử lý ngoại lệ</span>
+                        </div>
+                        <div id="chart-histogram" class="w-full h-64"></div>
+                    </div>
+                    <!-- Right: Boxplot Chart -->
+                    <div class="bg-surface-container/10 rounded-xl p-md border border-outline-variant/30 flex flex-col">
+                        <div class="flex justify-between items-center mb-2 px-2">
+                            <span class="font-label-sm text-xs font-bold text-on-surface uppercase">Biểu đồ hộp (Boxplot)</span>
+                            <span id="box-legend" class="text-[11px] text-on-surface-variant">So sánh Trước & Sau IQR</span>
+                        </div>
+                        <div id="chart-boxplot" class="w-full h-64"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Correlation Section -->
+        <section class="stagger-item delay-500">
+            <h3 class="font-title-md text-title-md text-on-surface mb-md">Tương quan giữa các đặc trưng</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-lg">
+                <!-- Heatmap Grid -->
+                <div class="col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm flex flex-col items-center justify-center min-h-[280px]">
+                    <div class="grid grid-cols-4 grid-rows-4 gap-2 text-center font-label-sm text-sm w-full max-w-[420px]">
+                        <div></div>
+                        <div class="flex items-end justify-center pb-2 font-bold text-on-surface-variant">R</div>
+                        <div class="flex items-end justify-center pb-2 font-bold text-on-surface-variant">F</div>
+                        <div class="flex items-end justify-center pb-2 font-bold text-on-surface-variant">M</div>
+
+                        <div class="flex items-center justify-end pr-2 font-bold text-on-surface-variant">R</div>
+                        <div class="bg-primary/20 p-3 rounded-lg text-on-surface font-bold flex items-center justify-center" id="corr-rr">1.00</div>
+                        <div class="bg-tertiary-container/30 p-3 rounded-lg text-on-surface font-semibold flex items-center justify-center" id="corr-rf">-0.50</div>
+                        <div class="bg-tertiary-container/40 p-3 rounded-lg text-on-surface font-semibold flex items-center justify-center" id="corr-rm">-0.51</div>
+
+                        <div class="flex items-center justify-end pr-2 font-bold text-on-surface-variant">F</div>
+                        <div class="bg-tertiary-container/30 p-3 rounded-lg text-on-surface font-semibold flex items-center justify-center" id="corr-fr">-0.50</div>
+                        <div class="bg-primary/20 p-3 rounded-lg text-on-surface font-bold flex items-center justify-center" id="corr-ff">1.00</div>
+                        <div class="bg-primary/80 p-3 rounded-lg text-white font-bold flex items-center justify-center shadow-sm" id="corr-fm">0.73</div>
+
+                        <div class="flex items-center justify-end pr-2 font-bold text-on-surface-variant">M</div>
+                        <div class="bg-tertiary-container/40 p-3 rounded-lg text-on-surface font-semibold flex items-center justify-center" id="corr-mr">-0.51</div>
+                        <div class="bg-primary/80 p-3 rounded-lg text-white font-bold flex items-center justify-center shadow-sm" id="corr-mf">0.73</div>
+                        <div class="bg-primary/20 p-3 rounded-lg text-on-surface font-bold flex items-center justify-center" id="corr-mm">1.00</div>
+                    </div>
+                </div>
+                <!-- Remarks Panel -->
+                <div class="col-span-1 bg-surface-container-lowest border border-outline-variant rounded-xl p-lg shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-title-md text-title-md text-on-surface flex items-center gap-2 mb-md">
+                            <span class="text-primary text-xl">✦</span> NHẬN XÉT
+                        </h4>
+                        <p class="font-body-md text-on-surface-variant leading-relaxed text-sm mb-4">
+                            <strong>Frequency</strong> và <strong>Monetary</strong> có tương quan dương mạnh mẽ (<span class="text-primary font-bold">+0.73</span>), thể hiện khách hàng mua sắm thường xuyên hơn có xu hướng chi tiêu nhiều hơn.
+                        </p>
+                        <p class="font-body-md text-on-surface-variant leading-relaxed text-sm">
+                            <strong>Recency</strong> có tương quan nghịch vừa phải với Frequency (<span class="text-amber-700 font-semibold">-0.50</span>) và Monetary (<span class="text-amber-700 font-semibold">-0.51</span>).
+                        </p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-outline-variant/30 flex items-center gap-2 text-secondary font-medium text-xs">
+                        <span class="material-symbols-outlined text-[16px]">verified</span>
+                        Cấu trúc phù hợp cho phân cụm K-Means
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Descriptive Statistics Table -->
+        <section class="bg-surface-container-lowest rounded-xl border border-outline-variant card-shadow overflow-hidden stagger-item delay-500">
+            <div class="p-4 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center">
+                <h3 class="font-title-md text-base font-semibold text-on-surface">Bảng thống kê mô tả RFM (Trước &amp; Sau tiền xử lý)</h3>
+                <span class="font-label-sm text-label-sm text-on-surface-variant">720 khách hàng</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-sm">
+                    <thead>
+                        <tr class="bg-surface-bright border-b border-outline-variant font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider">
+                            <th class="py-3 px-4">Đặc trưng</th>
+                            <th class="py-3 px-4">Giai đoạn</th>
+                            <th class="py-3 px-4 text-right">Mean</th>
+                            <th class="py-3 px-4 text-right">Std</th>
+                            <th class="py-3 px-4 text-right">Min</th>
+                            <th class="py-3 px-4 text-right">25% (Q1)</th>
+                            <th class="py-3 px-4 text-right">50% (Median)</th>
+                            <th class="py-3 px-4 text-right">75% (Q3)</th>
+                            <th class="py-3 px-4 text-right">Max</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-table-body" class="divide-y divide-outline-variant font-body-md">
+                        <!-- Populated by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Bottom Navigation Panel -->
+        <section class="stagger-item delay-500 bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm flex flex-col md:flex-row items-center justify-between gap-md mt-xl">
+            <div>
+                <h3 class="font-title-md text-title-md text-on-surface mb-1">Dữ liệu đã sẵn sàng cho bước tiếp theo</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant">Ba đặc trưng RFM đã được làm sạch và chuẩn hóa để đánh giá cấu trúc phân cụm.</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+                <a id="btn-to-choose-k" href="/choose-k" class="bg-primary text-on-primary py-3 px-lg rounded-lg font-label-sm text-label-sm font-bold flex items-center gap-sm shadow-md opacity-60 pointer-events-none transition-all">
+                    Tiếp tục chọn K <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </a>
+                <p class="text-[12px] text-on-surface-variant italic">Bước tiếp theo: đánh giá Elbow và Silhouette</p>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+</main>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/eda.js"></script>
+</body>
+</html>
