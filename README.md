@@ -15,7 +15,7 @@ Code khác contract thì dừng và báo issue; không tự đoán behavior.
 
 - Windows 10/11
 - Python 3.11.x
-- Streamlit
+- FastAPI + Uvicorn (Web Frontend & API)
 - Chrome/Edge
 
 ## Canonical input
@@ -74,35 +74,41 @@ Không commit trực tiếp vào `main` hoặc `develop` trong thời gian imple
 
 ```text
 customerinsight-ai/
-├── app.py
-├── views/
-├── components/
-├── src/
-├── data/
-├── tests/
-├── docs/
-│   ├── specification/
-│   └── release-evidence/
+├── web/
+│   ├── app.py          # FastAPI application & API endpoints
+│   ├── templates/       # HTML templates (Stitch visual parity)
+│   └── static/          # CSS design tokens & JavaScript modules
+├── components/         # Shared state & workflow helpers
+├── src/                # Canonical scientific core logic
+├── data/               # Canonical datasets
+├── tests/              # PyTest test suite
+├── docs/               # Specifications & release evidence
 ├── requirements.txt
 ├── README.md
 └── .gitignore
 ```
 
-## Setup
+## Setup & Running
 
+1. Khởi tạo môi trường ảo và cài đặt dependencies:
 ```cmd
 py -3.11 -m venv .venv
 .\.venv\Scripts\python.exe -m pip install --upgrade pip
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m streamlit run app.py
 ```
+
+2. Khởi chạy ứng dụng Web (FastAPI):
+```cmd
+.\.venv\Scripts\python.exe -m uvicorn web.app:app --reload
+```
+Truy cập giao diện tại: `http://127.0.0.1:8000`
 
 ## Verification
 
 ```cmd
 .\.venv\Scripts\python.exe -m pytest -q -ra
 .\.venv\Scripts\python.exe -m pytest --collect-only -q
-.\.venv\Scripts\python.exe -m compileall -q app.py views src components tests
+.\.venv\Scripts\python.exe -m compileall -q web src components tests
 .\.venv\Scripts\python.exe -m pip check
 ```
 

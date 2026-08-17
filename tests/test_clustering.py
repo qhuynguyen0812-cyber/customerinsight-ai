@@ -5,9 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 from sklearn.metrics import silhouette_score
-from streamlit.testing.v1 import AppTest
 
-from components.states import APP_STATE_KEY
 from src.clustering import (
     analyze_candidate_k,
     get_default_solver_kwargs,
@@ -175,33 +173,3 @@ def test_analysis_failure_leaves_old_state_untouched() -> None:
         set_k_analysis(state, metrics, recommend_k(metrics))
     assert state.k_metrics is old_metrics
     assert state.recommended_k == 2
-
-
-def test_page_gates_without_preprocessing_and_has_no_legacy_source() -> None:
-    page = ROOT / "views" / "3_Chon_K.py"
-    assert "df_scaled" not in page.read_text(encoding="utf-8")
-    app = AppTest.from_file(str(page)).run()
-    assert not app.exception
-    assert len(app.info) == 1
-    assert len(app.button) == 0
-
-
-def test_page_requires_explicit_analysis_cta() -> None:
-    validated, processed = canonical_pipeline()
-    state = new_app_state()
-    set_raw_dataset(state, validated.raw_df, validated.dataset_signature)
-    set_preprocessed_data(
-        state, processed["processed_df"], processed["scaled_matrix"], "prep"
-    )
-    app = AppTest.from_file(str(ROOT / "views" / "3_Chon_K.py"))
-    app.session_state[APP_STATE_KEY] = state
-    app.run()
-    assert not app.exception
-    assert state.k_metrics is None
-    assert app.button[0].label == "Phân tích K"
-
-    app.button[0].click().run(timeout=30)
-    assert not app.exception
-    assert state.recommended_k == 3
-    assert len(app.get("plotly_chart")) == 2
-    assert app.button[-1].label == "Xác nhận K"

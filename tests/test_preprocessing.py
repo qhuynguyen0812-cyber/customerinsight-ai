@@ -5,9 +5,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
-from streamlit.testing.v1 import AppTest
 
-from components.states import APP_STATE_KEY
 from src.preprocessing import (
     PreprocessingError,
     RFM_FEATURES,
@@ -196,31 +194,3 @@ def test_failed_preprocessing_leaves_previous_valid_state_unchanged() -> None:
     assert state.processed_df is previous_df
     assert state.scaled_matrix is previous_matrix
     assert state.preprocessing_signature == previous_signature
-
-
-def test_eda_page_gates_cleanly_without_validated_data() -> None:
-    app = AppTest.from_file(str(ROOT / "views" / "2_Kham_pha_du_lieu.py")).run()
-
-    assert not app.exception
-    assert len(app.info) == 1
-    assert len(app.button) == 0
-    assert len(app.get("plotly_chart")) == 0
-
-
-def test_eda_page_processes_canonical_state_and_renders() -> None:
-    validated = load_sample_dataset(ROOT / "data" / "sample_customers.csv")
-    state = new_app_state()
-    set_raw_dataset(state, validated.raw_df, validated.dataset_signature)
-    app = AppTest.from_file(str(ROOT / "views" / "2_Kham_pha_du_lieu.py"))
-    app.session_state[APP_STATE_KEY] = state
-
-    app.run()
-    assert not app.exception
-    assert app.button[0].label == "Xử lý dữ liệu"
-    assert state.processed_df is None
-
-    app.button[0].click().run()
-    assert not app.exception
-    assert len(state.processed_df) == 720
-    assert state.scaled_matrix.shape == (720, 3)
-    assert len(app.get("plotly_chart")) == 3

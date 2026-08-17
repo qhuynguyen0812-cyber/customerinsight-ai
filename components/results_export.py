@@ -1,7 +1,7 @@
 """TV6 customer-result validation and CSV export helpers.
 
 These helpers consume a completed result table. They deliberately do not fit a
-model, derive labels, or own Streamlit session state.
+model, derive labels, or own web session state.
 """
 
 from __future__ import annotations

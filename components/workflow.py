@@ -54,40 +54,9 @@ def workflow_stage(state: AppState) -> WorkflowStage:
 
 
 def progress_fraction(state: AppState) -> float:
-    """Return Streamlit-friendly progress in the inclusive ``0.0..1.0`` range."""
+    """Return normalized workflow progress in the inclusive ``0.0..1.0`` range."""
 
     return workflow_stage(state) / WorkflowStage.RESULTS_READY
-
-
-def render_progress(state: AppState | None = None) -> None:
-    """Render canonical workflow progress in the Streamlit sidebar."""
-
-    import streamlit as st
-
-    if state is None:
-        from components.states import get_app_state
-
-        state = get_app_state()
-    stage = workflow_stage(state)
-    frac = progress_fraction(state)
-
-    st.sidebar.markdown(
-        f'<div style="margin-top: auto; padding-top: 18px; border-top: 1px solid #dce9ff; margin-bottom: 8px;">'
-        f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 0.82rem;">'
-        f'<span style="font-weight: 600; color: #0b1c30;">Tiến độ phân tích</span>'
-        f'<span style="color: #464555; font-size: 0.78rem;">{int(stage)} / 5 bước hoàn tất</span>'
-        f'</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-    st.sidebar.progress(frac)
-    if stage == WorkflowStage.RESULTS_READY:
-        st.sidebar.markdown(
-            '<div style="display: flex; align-items: center; gap: 6px; color: #3525cd; font-size: 0.82rem; font-weight: 600; margin-top: 6px;">'
-            '<span>✓</span> <span>Phân tích hoàn tất</span>'
-            '</div>',
-            unsafe_allow_html=True,
-        )
 
 
 def can_access(state: AppState, destination: str) -> GateResult:
