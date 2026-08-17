@@ -1,7 +1,7 @@
 """Canonical, framework-independent state for the customer workflow.
 
 Feature modules own the concrete data objects; TV5 owns their lifetime and
-dependency rules.  Keeping this module free of Streamlit imports makes the
+dependency rules.  Keeping this module free of UI framework imports makes the
 contract testable and lets every page use the same invalidation semantics.
 """
 

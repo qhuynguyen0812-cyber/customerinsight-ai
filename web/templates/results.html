@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Kết quả - CustomerInsight AI</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "surface-container": "#e5eeff",
+                    "on-secondary-fixed-variant": "#005049",
+                    "surface-container-high": "#dce9ff",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary-fixed": "#0f0069",
+                    "outline": "#777587",
+                    "surface-variant": "#d3e4fe",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "background": "#f8f9ff",
+                    "tertiary": "#8b5cf6",
+                    "tertiary-fixed-dim": "#a78bfa",
+                    "outline-variant": "#c7c4d8",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "on-primary": "#ffffff",
+                    "on-tertiary-fixed": "#2e1065",
+                    "primary-container": "#4f46e5",
+                    "tertiary-container": "#7c3aed",
+                    "secondary": "#006a61",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-error": "#ffffff",
+                    "surface-tint": "#4d44e3",
+                    "inverse-surface": "#213145",
+                    "on-primary-container": "#dad7ff",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary": "#ffffff",
+                    "secondary-container": "#86f2e4",
+                    "secondary-fixed": "#89f5e7",
+                    "error": "#ba1a1a",
+                    "on-background": "#0b1c30",
+                    "inverse-primary": "#c3c0ff",
+                    "primary": "#3525cd",
+                    "on-secondary-fixed": "#00201d",
+                    "on-surface-variant": "#464555",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "surface": "#f8f9ff",
+                    "primary-fixed": "#e2dfff",
+                    "surface-bright": "#f8f9ff",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#ede9fe",
+                    "on-surface": "#0b1c30",
+                    "surface-dim": "#cbdbf5",
+                    "tertiary-fixed": "#c4b5fd",
+                    "on-secondary-container": "#006f66",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#3323cc"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "lg": "24px",
+                    "xs": "4px",
+                    "grid-gutter": "24px",
+                    "base": "8px",
+                    "xl": "32px",
+                    "container-padding": "32px",
+                    "2xl": "48px",
+                    "md": "16px",
+                    "sidebar-width": "280px",
+                    "sm": "8px"
+                },
+                "fontFamily": {
+                    "title-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-sm": ["Inter"]
+                },
+                "fontSize": {
+                    "title-md": ["20px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "1.25", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "1.3", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "1.6", "fontWeight": "400"}],
+                    "body-md": ["14px", {"lineHeight": "1.5", "fontWeight": "400"}],
+                    "display-lg": ["48px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "label-sm": ["12px", {"lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500"}]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .filled-icon {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    @media (min-width: 768px) {
+        body > header { margin-left: 280px; width: calc(100% - 280px); }
+        body > div > aside { position: fixed; inset: 0 auto 0 0; height: 100vh !important; top: 0 !important; z-index: 60; }
+        body > div > main { margin-left: 280px; width: calc(100% - 280px); flex: none; }
+    }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex justify-between items-center px-lg h-16">
+    <div class="flex items-center gap-md lg:hidden">
+        <button class="text-on-surface-variant hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+    </div>
+    <div class="hidden lg:flex items-center gap-xl">
+        <div class="flex gap-lg h-full items-center">
+            <span class="text-on-surface-variant h-full flex items-center px-sm font-label-sm text-label-sm">Dự án / Customer Segmentation / Kết quả</span>
+        </div>
+    </div>
+</header>
+
+<div class="flex flex-1 pt-16">
+<!-- Side Navigation Bar -->
+<aside class="w-sidebar-width bg-surface-container-low border-r border-outline-variant flex flex-col justify-between py-lg shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40">
+    <div class="space-y-6">
+        <div class="px-lg flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shrink-0">
+                CI
+            </div>
+            <div class="min-w-0">
+                <div class="font-title-md text-title-md font-bold text-primary whitespace-nowrap">CustomerInsight AI</div>
+                <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Enterprise Analytics</div>
+            </div>
+        </div>
+        <nav class="space-y-2">
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Tổng quan
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/data">
+                <span class="material-symbols-outlined" data-icon="database">database</span>
+                Dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/eda">
+                <span class="material-symbols-outlined" data-icon="explore">explore</span>
+                Khám phá dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/choose-k">
+                <span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+                Chọn K
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/clustering">
+                <span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+                Phân cụm
+            </a>
+            <a class="flex items-center gap-md text-primary font-bold border-l-4 border-primary bg-primary-container/10 px-lg py-md cursor-pointer active:scale-95 font-body-md text-body-md transition-all duration-200" href="/results">
+                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">assessment</span>
+                Kết quả
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-lg mt-auto">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <div class="font-label-sm text-label-sm text-on-surface-variant mb-2 font-semibold">Tiến độ phân tích</div>
+            <div class="w-full bg-surface-container-high rounded-full h-2 mb-2">
+                <div id="workflow-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width: 100%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="workflow-progress-count" class="font-label-sm text-[10px] text-on-surface-variant">5 / 5 bước hoàn tất</span>
+                <span id="workflow-progress-pct" class="font-label-sm text-[10px] text-primary font-bold">100%</span>
+            </div>
+            <p id="workflow-progress-next" class="font-label-sm text-[10px] text-primary font-semibold mt-2 border-t border-outline-variant/30 pt-2 flex items-center gap-1">
+                <span class="material-symbols-outlined text-xs filled-icon">check_circle</span> Phân tích hoàn tất
+            </p>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Area -->
+<main class="flex-1 p-container-padding overflow-y-auto bg-background min-h-[calc(100vh-64px)] pb-32">
+<div class="max-w-[1440px] mx-auto space-y-lg" id="results-panel">
+
+    <!-- Page Header -->
+    <div class="mb-xl">
+        <div class="text-primary font-label-sm text-label-sm uppercase tracking-wider mb-sm font-bold">BƯỚC 05 · KẾT QUẢ</div>
+        <h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs font-bold">Customer Intelligence</h2>
+        <p class="font-body-lg text-body-lg text-on-surface-variant mb-md max-w-3xl">Khám phá các phân khúc, tìm kiếm từng khách hàng và xuất kết quả phân tích.</p>
+        <div class="inline-flex items-center gap-sm bg-secondary-container text-on-secondary-container px-md py-sm rounded-full">
+            <span class="material-symbols-outlined text-sm filled-icon">check_circle</span>
+            <span class="font-label-sm text-label-sm font-medium" id="header-status-badge">Phân tích hoàn tất | 720 khách hàng · 3 phân khúc</span>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="flex gap-2 border-b border-outline-variant mb-lg overflow-x-auto pb-px" id="segment-tabs">
+        <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Dashboard Bento Grid -->
+    <div class="grid grid-cols-12 gap-grid-gutter mb-xl" id="cluster-cards-container">
+        <!-- Populated dynamically by JS -->
+    </div>
+
+    <!-- Segment 360 & Comparison -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-grid-gutter mb-xl">
+        <!-- Detail Panel -->
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm flex flex-col justify-between" id="profile-panel">
+            <div>
+                <h3 class="font-title-md text-title-md font-bold text-on-surface border-b border-outline-variant pb-sm mb-sm" id="profile-title">Tổng quan phân khúc</h3>
+                <div class="font-body-md text-body-md text-on-surface-variant mb-4" id="profile-desc">Chọn một phân khúc để xem hồ sơ RFM chi tiết.</div>
+            </div>
+        </div>
+
+        <!-- Comparison Charts -->
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-sm" id="comparison-panel">
+            <h3 class="font-title-md text-title-md font-bold text-on-surface border-b border-outline-variant pb-sm mb-md">So sánh RFM giữa các phân khúc</h3>
+            <div class="space-y-4" id="comparison-charts">
+                <!-- Populated dynamically by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Table Section -->
+    <div class="bg-surface-container-lowest rounded-xl border border-outline-variant shadow-sm overflow-hidden mb-xl">
+        <div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low flex-wrap gap-4">
+            <h3 class="font-title-md text-title-md font-bold text-on-surface flex items-center gap-2">
+                Khám phá khách hàng
+                <span class="bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full font-label-sm text-label-sm" id="table-count">720 khách hàng · đang hiển thị 8 dòng mẫu</span>
+            </h3>
+            <div class="flex items-center gap-4 flex-wrap">
+                <select class="border-outline-variant rounded-lg font-body-md text-body-md py-2 pl-3 pr-8 focus:ring-primary focus:border-primary bg-surface-container-lowest" id="cluster-select">
+                    <option value="all">Tất cả phân khúc</option>
+                </select>
+                <div class="relative">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+                    <input class="pl-10 pr-4 py-2 border-outline-variant rounded-lg font-body-md text-body-md focus:ring-2 focus:ring-primary focus:border-primary w-64 bg-surface-container-lowest" id="customer-search" placeholder="Tìm CustomerID..." type="text"/>
+                </div>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="bg-surface-container-low border-b border-outline-variant">
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">CustomerID</th>
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Recency</th>
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Frequency</th>
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Monetary</th>
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">Cluster</th>
+                        <th class="py-3 px-md font-label-sm text-label-sm uppercase text-on-surface-variant font-semibold">SegmentName</th>
+                    </tr>
+                </thead>
+                <tbody class="font-body-md text-body-md" id="customer-tbody">
+                    <!-- Populated by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Export Center & Model Info -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-grid-gutter">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm flex flex-col justify-between h-full">
+            <div>
+                <h3 class="font-title-md text-title-md font-bold text-on-surface mb-2">Xuất kết quả</h3>
+                <p class="font-body-md text-body-md text-on-surface-variant mb-4">Tải danh sách khách hàng cùng phân khúc và nhãn phân đoạn.</p>
+                <div class="bg-surface-container p-3 rounded flex items-center gap-3 mb-6 border border-outline-variant">
+                    <span class="material-symbols-outlined text-on-surface-variant">description</span>
+                    <div>
+                        <div class="font-label-sm text-label-sm font-medium">customer_results.csv</div>
+                        <div class="font-label-sm text-label-sm text-on-surface-variant">Định dạng CSV, UTF-8 BOM, LF line endings</div>
+                    </div>
+                </div>
+                <details class="mb-4">
+                    <summary class="cursor-pointer font-label-sm text-label-sm text-primary hover:underline">Xem cấu trúc tệp</summary>
+                    <div class="mt-2 text-on-surface-variant font-body-md text-sm p-2 bg-surface-container-low rounded">
+                        Cột dữ liệu: CustomerID, Recency, Frequency, Monetary, Cluster, SegmentName
+                    </div>
+                </details>
+            </div>
+            <a href="/api/export" download="customer_results.csv" class="bg-primary text-on-primary px-lg py-3 rounded-lg font-label-sm text-label-sm font-semibold flex items-center justify-center gap-2 hover:bg-primary-container transition-colors shadow-sm w-full sm:w-auto self-start">
+                <span class="material-symbols-outlined text-sm">download</span>
+                Tải CSV kết quả
+            </a>
+        </div>
+
+        <!-- Model Information -->
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm">
+            <details class="group cursor-pointer">
+                <summary class="font-title-md text-title-md font-bold text-on-surface flex justify-between items-center mb-0 list-none">
+                    <span>Thông tin mô hình</span>
+                    <span class="material-symbols-outlined text-on-surface-variant group-open:rotate-180 transition-transform">expand_more</span>
+                </summary>
+                <div class="mt-4 grid grid-cols-2 gap-4 border-t border-outline-variant pt-4" id="model-meta-grid">
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">K</span><span class="font-body-md text-body-md font-semibold" id="meta-k">3</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">init</span><span class="font-body-md text-body-md" id="meta-init">k-means++</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">n_init</span><span class="font-body-md text-body-md" id="meta-ninit">10</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">random_state</span><span class="font-body-md text-body-md" id="meta-rs">42</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">max_iter</span><span class="font-body-md text-body-md" id="meta-maxiter">300</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">tol</span><span class="font-body-md text-body-md" id="meta-tol">0.0001</span></div>
+                    <div class="col-span-2"><span class="font-label-sm text-label-sm text-on-surface-variant block">Inertia</span><span class="font-body-md text-body-md font-semibold" id="meta-inertia">611.4205</span></div>
+                    <div class="col-span-2"><span class="font-label-sm text-label-sm text-on-surface-variant block">Silhouette</span><span class="font-body-md text-body-md font-semibold text-secondary" id="meta-silhouette">0.4588</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">Iterations</span><span class="font-body-md text-body-md font-semibold" id="meta-iterations">9</span></div>
+                    <div><span class="font-label-sm text-label-sm text-on-surface-variant block">Runtime</span><span class="font-body-md text-body-md font-semibold" id="meta-runtime">0.08 s</span></div>
+                </div>
+            </details>
+            <div class="mt-6 space-y-2" id="verification-checkmarks">
+                <div class="flex items-center gap-2 text-secondary">
+                    <span class="material-symbols-outlined text-sm filled-icon">check_circle</span>
+                    <span class="font-label-sm text-label-sm" id="chk-customers">720/720 khách hàng đã được phân cụm thành công</span>
+                </div>
+                <div class="flex items-center gap-2 text-secondary">
+                    <span class="material-symbols-outlined text-sm filled-icon">check_circle</span>
+                    <span class="font-label-sm text-label-sm">CustomerID duy nhất được bảo toàn</span>
+                </div>
+                <div class="flex items-center gap-2 text-secondary">
+                    <span class="material-symbols-outlined text-sm filled-icon">check_circle</span>
+                    <span class="font-label-sm text-label-sm">Không có giá trị Cluster bị thiếu</span>
+                </div>
+                <div class="flex items-center gap-2 text-secondary">
+                    <span class="material-symbols-outlined text-sm filled-icon">check_circle</span>
+                    <span class="font-label-sm text-label-sm">Không có SegmentName bị thiếu</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+</main>
+</div>
+
+<!-- Right Detail Drawer -->
+<div class="fixed inset-y-0 right-0 w-[400px] bg-surface-container-lowest border-l border-outline-variant shadow-2xl z-50 transform translate-x-full transition-transform duration-300 flex flex-col" id="drawer">
+    <div class="p-lg border-b border-outline-variant flex justify-between items-center bg-surface">
+        <h3 class="font-title-md text-title-md font-bold text-on-surface">Chi tiết khách hàng</h3>
+        <button class="text-on-surface-variant hover:bg-surface-container-low p-1 rounded-full transition-colors" id="close-drawer">
+            <span class="material-symbols-outlined">close</span>
+        </button>
+    </div>
+    <div class="p-lg flex-1 overflow-y-auto" id="drawer-content">
+        <!-- Populated by JS -->
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/results.js"></script>
+</body>
+</html>

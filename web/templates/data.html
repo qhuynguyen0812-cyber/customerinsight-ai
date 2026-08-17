@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CustomerInsight AI - Dữ liệu</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+                  "on-surface": "#0b1c30",
+                  "tertiary-container": "#a44100",
+                  "primary-fixed": "#e2dfff",
+                  "outline-variant": "#c7c4d8",
+                  "on-tertiary-fixed": "#351000",
+                  "surface-container": "#e5eeff",
+                  "secondary": "#006a61",
+                  "surface-container-high": "#dce9ff",
+                  "surface": "#f8f9ff",
+                  "on-primary-container": "#dad7ff",
+                  "surface-variant": "#d3e4fe",
+                  "error": "#ba1a1a",
+                  "on-background": "#0b1c30",
+                  "primary-container": "#4f46e5",
+                  "on-tertiary-container": "#ffd2be",
+                  "surface-tint": "#4d44e3",
+                  "inverse-surface": "#213145",
+                  "on-secondary-fixed": "#00201d",
+                  "surface-bright": "#f8f9ff",
+                  "tertiary-fixed-dim": "#ffb695",
+                  "surface-container-low": "#eff4ff",
+                  "secondary-container": "#86f2e4",
+                  "surface-container-highest": "#d3e4fe",
+                  "inverse-on-surface": "#eaf1ff",
+                  "on-surface-variant": "#464555",
+                  "on-primary": "#ffffff",
+                  "background": "#f8f9ff",
+                  "on-error-container": "#93000a",
+                  "secondary-fixed-dim": "#6bd8cb",
+                  "surface-dim": "#cbdbf5",
+                  "primary-fixed-dim": "#c3c0ff",
+                  "on-error": "#ffffff",
+                  "tertiary": "#7e3000",
+                  "surface-container-lowest": "#ffffff",
+                  "on-secondary-fixed-variant": "#005049",
+                  "on-primary-fixed": "#0f0069",
+                  "on-secondary-container": "#006f66",
+                  "inverse-primary": "#c3c0ff",
+                  "on-secondary": "#ffffff",
+                  "error-container": "#ffdad6",
+                  "on-tertiary": "#ffffff",
+                  "tertiary-fixed": "#ffdbcc",
+                  "on-primary-fixed-variant": "#3323cc",
+                  "outline": "#777587",
+                  "secondary-fixed": "#89f5e7",
+                  "on-tertiary-fixed-variant": "#7b2f00",
+                  "primary": "#3525cd"
+          },
+          "borderRadius": {
+                  "DEFAULT": "0.25rem",
+                  "lg": "0.5rem",
+                  "xl": "0.75rem",
+                  "full": "9999px"
+          },
+          "spacing": {
+                  "sidebar-width": "280px",
+                  "2xl": "48px",
+                  "xl": "32px",
+                  "container-padding": "32px",
+                  "xs": "4px",
+                  "md": "16px",
+                  "lg": "24px",
+                  "grid-gutter": "24px",
+                  "base": "8px",
+                  "sm": "8px"
+          },
+          "fontFamily": {
+                  "headline-lg-mobile": ["Inter"],
+                  "body-lg": ["Inter"],
+                  "title-md": ["Inter"],
+                  "headline-lg": ["Inter"],
+                  "display-lg": ["Inter"],
+                  "body-md": ["Inter"],
+                  "label-sm": ["Inter"]
+          },
+          "fontSize": {
+                  "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                  "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                  "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                  "headline-lg": ["32px", { "lineHeight": "1.25", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                  "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                  "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                  "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }]
+          }
+        }
+      }
+    };
+</script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); }
+    @media (min-width: 768px) {
+        body > header { margin-left: 280px; width: calc(100% - 280px); }
+        body > div > aside { position: fixed; inset: 0 auto 0 0; height: 100vh !important; top: 0 !important; z-index: 60; }
+        body > div > main { margin-left: 280px; width: calc(100% - 280px); flex: none; }
+    }
+</style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-bright/80 backdrop-blur-md border-b border-outline-variant shadow-sm flex justify-between items-center px-container-padding h-16">
+    <div class="flex items-center gap-md">
+        <span class="text-sm font-medium text-on-surface-variant">Dự án</span>
+        <span class="text-sm text-outline-variant">/</span>
+        <span class="text-sm font-semibold text-on-surface">Customer Segmentation</span>
+    </div>
+</header>
+
+<div class="flex flex-1 pt-16">
+<!-- Side Navigation Bar -->
+<aside class="w-sidebar-width bg-surface-container-lowest border-r border-outline-variant flex flex-col justify-between py-xl shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40 hidden md:flex">
+    <div class="space-y-6">
+        <div class="px-lg flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shrink-0">
+                CI
+            </div>
+            <div class="min-w-0">
+                <div class="font-title-md text-title-md font-bold text-primary whitespace-nowrap">CustomerInsight AI</div>
+                <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Enterprise Analytics</div>
+            </div>
+        </div>
+        <nav class="space-y-2">
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/">
+                <span class="material-symbols-outlined">dashboard</span>
+                Tổng quan
+            </a>
+            <a class="flex items-center gap-md text-primary font-bold border-l-4 border-primary bg-primary-container/10 px-lg py-md cursor-pointer active:scale-95 font-body-md text-body-md hover:bg-surface-container-low transition-colors duration-200" href="/data">
+                <span class="material-symbols-outlined">database</span>
+                Dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/eda">
+                <span class="material-symbols-outlined" data-icon="explore">explore</span>
+                Khám phá dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/choose-k">
+                <span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+                Chọn K
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/clustering">
+                <span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+                Phân cụm
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/results">
+                <span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Kết quả
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-lg mt-auto">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <div class="font-label-sm text-label-sm text-on-surface-variant mb-2 font-semibold">Tiến độ phân tích</div>
+            <div class="w-full bg-surface-container-high rounded-full h-2 mb-2">
+                <div id="workflow-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="workflow-progress-count" class="font-label-sm text-[10px] text-on-surface-variant">0 / 5 bước hoàn tất</span>
+                <span id="workflow-progress-pct" class="font-label-sm text-[10px] text-primary font-bold">0%</span>
+            </div>
+            <p id="workflow-progress-next" class="font-label-sm text-[10px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-2">Tiếp theo: Dữ liệu</p>
+        </div>
+    </div>
+</aside>
+
+<!-- Canvas -->
+<main class="flex-1 overflow-y-auto bg-background p-container-padding min-h-[calc(100vh-64px)] pb-32">
+<div class="max-w-6xl mx-auto space-y-8">
+
+    <!-- Header Section -->
+    <section class="space-y-4">
+        <div class="flex items-center gap-2">
+            <span class="font-label-sm text-label-sm text-primary uppercase tracking-wider font-bold">BƯỚC 01 · DỮ LIỆU</span>
+        </div>
+        <div>
+            <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface hidden md:block">Chuẩn bị dữ liệu khách hàng</h2>
+            <h2 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface block md:hidden">Chuẩn bị dữ liệu khách hàng</h2>
+            <p class="font-body-lg text-body-lg text-on-surface-variant mt-2 max-w-3xl">Bắt đầu với bộ dữ liệu mẫu hoặc tải lên dữ liệu RFM của riêng bạn. Hệ thống sẽ kiểm tra cấu trúc và chất lượng trước khi phân tích.</p>
+        </div>
+    </section>
+
+    <!-- Error alert container -->
+    <div id="dataset-error" class="hidden bg-error-container text-on-error-container border border-error/30 rounded-xl p-4 text-sm font-medium"></div>
+
+    <!-- Workspace Section -->
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-grid-gutter">
+        <!-- Sample Dataset Card -->
+        <div class="bg-white rounded-xl border border-outline-variant p-6 card-shadow flex flex-col justify-between h-full">
+            <div>
+                <div class="flex items-start justify-between mb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary">
+                            <span class="material-symbols-outlined" data-icon="table_view">table_view</span>
+                        </div>
+                        <div>
+                            <h3 class="font-title-md text-base font-semibold text-on-surface">Bộ dữ liệu RFM của dự án</h3>
+                            <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Dataset mẫu tích hợp sẵn</p>
+                        </div>
+                    </div>
+                    <span class="px-2 py-1 bg-surface-container text-primary text-xs font-semibold rounded uppercase tracking-wider">CSV</span>
+                </div>
+                <div class="flex gap-6 mb-6">
+                    <div>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Quy mô</p>
+                        <p class="font-body-lg text-body-lg font-semibold text-on-surface">720 khách hàng</p>
+                    </div>
+                    <div>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mb-1">Cấu trúc</p>
+                        <p class="font-body-lg text-body-lg font-semibold text-on-surface">4 thuộc tính</p>
+                    </div>
+                </div>
+                <div class="mb-6">
+                    <p class="font-label-sm text-label-sm text-on-surface-variant mb-2">Trường dữ liệu</p>
+                    <div class="flex flex-wrap gap-2">
+                        <span class="px-3 py-1 bg-surface-bright border border-outline-variant rounded-full text-xs font-medium text-on-surface">CustomerID</span>
+                        <span class="px-3 py-1 bg-surface-bright border border-outline-variant rounded-full text-xs font-medium text-on-surface">Recency</span>
+                        <span class="px-3 py-1 bg-surface-bright border border-outline-variant rounded-full text-xs font-medium text-on-surface">Frequency</span>
+                        <span class="px-3 py-1 bg-surface-bright border border-outline-variant rounded-full text-xs font-medium text-on-surface">Monetary</span>
+                    </div>
+                </div>
+            </div>
+            <button id="sample-button" class="w-full bg-primary-container text-on-primary font-medium py-3 rounded-lg hover:bg-primary-container/90 transition-colors shadow-sm flex items-center justify-center gap-2 active:scale-95">
+                <span class="material-symbols-outlined text-[20px]" data-icon="check_circle">check_circle</span>
+                Dùng dataset mẫu
+            </button>
+        </div>
+
+        <!-- Upload Dropzone -->
+        <div id="dropzone" class="bg-surface-bright rounded-xl border-2 border-dashed border-outline-variant p-8 flex flex-col items-center justify-center text-center h-full hover:bg-surface-container-low hover:border-primary transition-colors cursor-pointer group">
+            <input type="file" id="csv-file" accept=".csv" class="hidden" />
+            <div class="w-16 h-16 rounded-full bg-white shadow-sm flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+                <span class="material-symbols-outlined text-3xl" data-icon="upload_file">upload_file</span>
+            </div>
+            <h3 class="font-title-md text-base font-semibold text-on-surface mb-2">Tải dữ liệu của bạn</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-6 max-w-xs">Kéo thả tệp CSV vào đây hoặc nhấp để duyệt. Đảm bảo dữ liệu đã tính toán RFM.</p>
+            <button type="button" id="choose-file" class="bg-white border border-outline-variant text-on-surface font-medium py-2 px-6 rounded-lg hover:bg-surface-container-lowest transition-colors shadow-sm active:scale-95">
+                Chọn tệp
+            </button>
+        </div>
+    </section>
+
+    <!-- Status & Loaded State Container (Controlled by dataset_status in data.js) -->
+    <div id="dataset-status" class="hidden space-y-8">
+        <!-- Banner & Validation Section -->
+        <div class="bg-white rounded-xl border border-outline-variant card-shadow overflow-hidden space-y-0">
+            <!-- Success Banner -->
+            <div class="bg-surface-container-low p-6 border-b border-outline-variant flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <span class="material-symbols-outlined text-secondary text-3xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                    <div>
+                        <h3 class="font-title-md text-lg font-semibold text-on-surface">Dataset đã sẵn sàng</h3>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">Dữ liệu đáp ứng yêu cầu đầu vào của quy trình phân tích. • SHA-256: <span id="dataset-signature" class="font-mono">8f4e...9a2b</span></p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="bg-white px-4 py-2 rounded-lg border border-outline-variant shadow-sm text-center">
+                        <p class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold" id="dataset-row-count">720</p>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Khách hàng</p>
+                    </div>
+                    <div class="bg-white px-4 py-2 rounded-lg border border-outline-variant shadow-sm text-center">
+                        <p class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold">4</p>
+                        <p class="font-label-sm text-label-sm text-on-surface-variant uppercase mt-1">Thuộc tính</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 divide-y lg:divide-y-0 lg:divide-x divide-outline-variant">
+                <!-- Validation Checklist -->
+                <div class="p-6 col-span-1 bg-surface-bright">
+                    <h4 class="font-label-sm text-label-sm font-semibold text-on-surface uppercase tracking-wider mb-4">Kiểm tra dữ liệu</h4>
+                    <ul class="space-y-3">
+                        <li class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-body-md text-sm text-on-surface">Đọc cấu trúc tệp</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-body-md text-sm text-on-surface">Kiểm tra các cột bắt buộc</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-body-md text-sm text-on-surface">Kiểm tra kiểu dữ liệu</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-body-md text-sm text-on-surface">Kiểm tra CustomerID</span>
+                        </li>
+                        <li class="flex items-center gap-3">
+                            <span class="material-symbols-outlined text-secondary text-[20px]" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                            <span class="font-body-md text-sm text-on-surface">Đánh giá chất lượng RFM</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Data Quality Table -->
+                <div class="p-6 col-span-2">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-label-sm text-label-sm font-semibold text-on-surface uppercase tracking-wider">Chất lượng dữ liệu</h4>
+                        <div class="flex gap-4 text-sm">
+                            <span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-secondary"></span> <span id="missing-total">0</span> Thiếu</span>
+                            <span class="flex items-center gap-1 text-on-surface-variant"><span class="w-2 h-2 rounded-full bg-amber-500"></span> <span id="outlier-total">117</span> Ngoại lệ</span>
+                        </div>
+                    </div>
+                    <div class="mb-3 space-y-1 text-xs text-on-surface-variant">
+                        <div id="guidance-missing" class="font-medium text-secondary">✓ Không có giá trị RFM còn thiếu</div>
+                        <div id="guidance-outliers" class="font-medium text-amber-600">⚠ 117 giá trị ngoại lệ theo IQR</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-surface-container-lowest border-b border-outline-variant">
+                                    <th class="py-3 px-4 font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase">Thuộc tính</th>
+                                    <th class="py-3 px-4 font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase">Giá trị thiếu</th>
+                                    <th class="py-3 px-4 font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase">Ngoại lệ (IQR)</th>
+                                    <th class="py-3 px-4 font-label-sm text-label-sm font-semibold text-on-surface-variant uppercase">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-outline-variant font-body-md text-sm" id="quality-body">
+                                <!-- Populated by data.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Preview Section -->
+        <div class="bg-white rounded-xl border border-outline-variant card-shadow overflow-hidden">
+            <div class="p-6 border-b border-outline-variant flex items-center justify-between">
+                <div>
+                    <h4 class="font-title-md text-base font-semibold text-on-surface">Dữ liệu mẫu</h4>
+                    <p class="font-label-sm text-label-sm text-on-surface-variant mt-1">8 dòng đầu tiên của tập dữ liệu</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-lowest border-b border-outline-variant font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">
+                            <th class="py-3 px-6">STT</th>
+                            <th class="py-3 px-6">CustomerID</th>
+                            <th class="py-3 px-6 text-right">Recency</th>
+                            <th class="py-3 px-6 text-right">Frequency</th>
+                            <th class="py-3 px-6 text-right">Monetary</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-outline-variant font-body-md text-sm" id="preview-body">
+                        <!-- Populated by data.js -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-6 bg-surface-bright border-t border-outline-variant flex justify-end">
+                <a id="btn-to-eda" href="/eda" class="bg-primary text-on-primary font-medium py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors shadow-sm flex items-center gap-2 active:scale-95">
+                    Tiếp tục khám phá dữ liệu
+                    <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+</main>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/data.js"></script>
+</body>
+</html>
