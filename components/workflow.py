@@ -54,25 +54,9 @@ def workflow_stage(state: AppState) -> WorkflowStage:
 
 
 def progress_fraction(state: AppState) -> float:
-    """Return Streamlit-friendly progress in the inclusive ``0.0..1.0`` range."""
+    """Return normalized workflow progress in the inclusive ``0.0..1.0`` range."""
 
     return workflow_stage(state) / WorkflowStage.RESULTS_READY
-
-
-def render_progress(state: AppState | None = None) -> None:
-    """Render canonical workflow progress in the Streamlit sidebar."""
-
-    import streamlit as st
-
-    if state is None:
-        from components.states import get_app_state
-
-        state = get_app_state()
-    stage = workflow_stage(state)
-    st.sidebar.progress(
-        progress_fraction(state),
-        text=f"Workflow: {stage.name.replace('_', ' ').title()} ({int(stage)}/5)",
-    )
 
 
 def can_access(state: AppState, destination: str) -> GateResult:

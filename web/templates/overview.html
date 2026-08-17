@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CustomerInsight AI - Tổng quan</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "surface-bright": "#f8f9ff",
+                    "on-surface": "#0b1c30",
+                    "on-secondary-fixed-variant": "#005049",
+                    "inverse-on-surface": "#eaf1ff",
+                    "on-error": "#ffffff",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "primary": "#3525cd",
+                    "on-tertiary-fixed": "#351000",
+                    "on-surface-variant": "#464555",
+                    "outline": "#777587",
+                    "surface-container-highest": "#d3e4fe",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "surface-tint": "#4d44e3",
+                    "surface-container-high": "#dce9ff",
+                    "on-primary": "#ffffff",
+                    "surface-container-low": "#eff4ff",
+                    "on-tertiary": "#ffffff",
+                    "tertiary-container": "#a44100",
+                    "tertiary": "#7e3000",
+                    "on-secondary": "#ffffff",
+                    "background": "#f8f9ff",
+                    "inverse-surface": "#213145",
+                    "on-secondary-container": "#006f66",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "primary-fixed": "#e2dfff",
+                    "on-secondary-fixed": "#00201d",
+                    "secondary": "#006a61",
+                    "on-background": "#0b1c30",
+                    "primary-container": "#4f46e5",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-primary": "#c3c0ff",
+                    "surface-variant": "#d3e4fe",
+                    "error": "#ba1a1a",
+                    "outline-variant": "#c7c4d8",
+                    "on-tertiary-container": "#ffd2be",
+                    "surface": "#f8f9ff",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "secondary-fixed": "#89f5e7",
+                    "surface-container": "#e5eeff",
+                    "on-primary-fixed": "#0f0069",
+                    "surface-dim": "#cbdbf5",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "tertiary-fixed": "#ffdbcc",
+                    "error-container": "#ffdad6",
+                    "on-error-container": "#93000a",
+                    "on-primary-container": "#dad7ff",
+                    "secondary-container": "#86f2e4"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "md": "16px",
+                    "sm": "8px",
+                    "lg": "24px",
+                    "grid-gutter": "24px",
+                    "base": "8px",
+                    "sidebar-width": "280px",
+                    "xl": "32px",
+                    "container-padding": "32px",
+                    "2xl": "48px",
+                    "xs": "4px"
+                },
+                "fontFamily": {
+                    "label-sm": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "title-md": ["Inter"],
+                    "display-lg": ["Inter"]
+                },
+                "fontSize": {
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "headline-lg": ["32px", { "lineHeight": "1.25", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                    "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                    "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+        }
+    }
+    #customer-cluster-viz canvas {
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100%;
+        display: block;
+    }
+    @media (min-width: 768px) {
+        body > header { margin-left: 280px; width: calc(100% - 280px); }
+        body > div > aside { position: fixed; inset: 0 auto 0 0; height: 100vh !important; top: 0 !important; z-index: 60; }
+        body > div > main { margin-left: 280px; width: calc(100% - 280px); flex: none; }
+    }
+</style>
+</head>
+<body class="bg-surface-bright text-on-surface font-body-lg antialiased min-h-screen flex flex-col">
+<!-- TopAppBar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-bright/80 backdrop-blur-md border-b border-outline-variant shadow-sm flex justify-between items-center px-container-padding h-16">
+    <div class="flex items-center gap-md">
+        <span class="text-sm font-medium text-on-surface-variant">Dự án</span>
+        <span class="text-sm text-outline-variant">/</span>
+        <span class="text-sm font-semibold text-on-surface">Customer Segmentation</span>
+    </div>
+</header>
+
+<div class="flex flex-1 pt-16">
+<!-- Side Navigation Bar -->
+<aside class="w-sidebar-width bg-surface-container-lowest border-r border-outline-variant flex flex-col justify-between py-xl shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40 hidden md:flex">
+    <div class="space-y-6">
+        <div class="px-lg flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shrink-0">
+                CI
+            </div>
+            <div class="min-w-0">
+                <div class="font-title-md text-title-md font-bold text-primary whitespace-nowrap">CustomerInsight AI</div>
+                <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Enterprise Analytics</div>
+            </div>
+        </div>
+        <nav class="space-y-2">
+            <a class="flex items-center gap-md text-primary border-l-4 border-primary bg-primary-container/10 px-lg py-md cursor-pointer active:scale-95 font-body-md text-body-md hover:bg-surface-container-low transition-colors duration-200" href="/">
+                <span class="material-symbols-outlined">dashboard</span>
+                Tổng quan
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/data">
+                <span class="material-symbols-outlined">database</span>
+                Dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/eda">
+                <span class="material-symbols-outlined" data-icon="explore">explore</span>
+                Khám phá dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/choose-k">
+                <span class="material-symbols-outlined" data-icon="format_list_numbered">format_list_numbered</span>
+                Chọn K
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/clustering">
+                <span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+                Phân cụm
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-low cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/results">
+                <span class="material-symbols-outlined">assessment</span>
+                Kết quả
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-lg mt-auto">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <div class="font-label-sm text-label-sm text-on-surface-variant mb-2 font-semibold">Tiến độ phân tích</div>
+            <div class="w-full bg-surface-container-high rounded-full h-2 mb-2">
+                <div id="workflow-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="workflow-progress-count" class="font-label-sm text-[10px] text-on-surface-variant">0 / 5 bước hoàn tất</span>
+                <span id="workflow-progress-pct" class="font-label-sm text-[10px] text-primary font-bold">0%</span>
+            </div>
+            <p id="workflow-progress-next" class="font-label-sm text-[10px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-2">Tiếp theo: Dữ liệu</p>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Canvas -->
+<main class="flex-1 p-container-padding overflow-y-auto relative min-h-[calc(100vh-64px)] pb-32">
+<div class="max-w-[1280px] mx-auto space-y-2xl">
+
+    <!-- Hero Section -->
+    <section class="relative rounded-3xl overflow-hidden bg-surface-container-lowest border border-outline-variant/60 shadow-[0_4px_24px_rgba(0,0,0,0.03)]">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-xl items-center min-h-[580px] p-8 lg:p-12">
+            <!-- Left: Content (55%) -->
+            <div class="lg:col-span-7 space-y-6 z-10">
+                <div class="inline-flex items-center px-3 py-1 rounded-full border border-primary/20 bg-primary/5 text-primary font-label-sm text-label-sm tracking-widest uppercase font-semibold">
+                    CUSTOMERINSIGHT AI
+                </div>
+                <h1 class="font-display-lg text-display-lg text-on-surface leading-tight font-bold">
+                    Biến dữ liệu khách hàng thành những phân khúc có ý nghĩa.
+                </h1>
+                <p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl leading-relaxed">
+                    Khám phá cấu trúc khách hàng bằng RFM và K-Means, từ dữ liệu thô đến các phân khúc dễ hiểu và có thể hành động.
+                </p>
+                <div class="flex flex-wrap gap-4 pt-2">
+                    <a href="/data" class="bg-primary text-on-primary px-lg py-3 rounded-md font-label-sm text-label-sm font-semibold hover:bg-primary/90 hover:shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] transition-all active:scale-95 inline-flex items-center gap-2">
+                        Bắt đầu phân tích
+                        <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+                    </a>
+                    <a href="#how-it-works" class="bg-surface-container-lowest text-on-surface border border-outline-variant px-lg py-3 rounded-md font-label-sm text-label-sm font-semibold hover:bg-surface-container-low transition-colors active:scale-95">
+                        Khám phá cách hoạt động
+                    </a>
+                </div>
+                <div class="flex flex-wrap gap-3 pt-6 border-t border-outline-variant/50 mt-6">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-xs font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                        RFM Analysis
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-xs font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        K-Means
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-highest text-on-surface-variant font-label-sm text-xs font-medium">
+                        <span class="w-1.5 h-1.5 rounded-full bg-violet-500"></span>
+                        Customer Profiling
+                    </span>
+                </div>
+            </div>
+
+            <!-- Right: Visualization (45%) -->
+            <div class="lg:col-span-5 relative h-full min-h-[420px] rounded-2xl overflow-hidden border border-outline-variant shadow-[0_4px_24px_rgba(79,70,229,0.08),0_0_40px_rgba(139,92,246,0.08)] bg-surface-bright/40 backdrop-blur-sm [background-image:linear-gradient(rgba(79,70,229,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(79,70,229,0.03)_1px,transparent_1px)] [background-size:20px_20px]">
+                <div class="relative w-full h-full min-h-[420px]" id="customer-cluster-viz">
+                    <div class="absolute inset-0 w-full h-full bg-transparent" style="display:block;">
+                        <script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+                        <div id="threejs-container-ANIMATION_17" style="width:100%;height:100%"></div>
+                        <script>
+                        (function() {
+                          const container = document.getElementById('customer-cluster-viz');
+                          if (!container) return;
+
+                          const width = container.clientWidth > 0 ? container.clientWidth : 460;
+                          const height = container.clientHeight > 0 ? container.clientHeight : 420;
+
+                          const scene = new THREE.Scene();
+                          const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+                          camera.position.z = 15;
+
+                          const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+                          renderer.setSize(width, height);
+                          renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+                          const subContainer = document.getElementById('threejs-container-ANIMATION_17');
+                          if (subContainer) subContainer.appendChild(renderer.domElement);
+
+                          const colors = { indigo: 0x4f46e5, teal: 0x10b981, violet: 0x8b5cf6 };
+                          const particleCount = 500;
+                          const geometry = new THREE.BufferGeometry();
+                          const positions = new Float32Array(particleCount * 3);
+                          const initialPositions = new Float32Array(particleCount * 3);
+                          const targetPositions = new Float32Array(particleCount * 3);
+                          const colorAttrs = new Float32Array(particleCount * 3);
+
+                          const centroids = [
+                            new THREE.Vector3(-4, 2, 0),
+                            new THREE.Vector3(4, -1, 0),
+                            new THREE.Vector3(-1, -3, 0)
+                          ];
+
+                          const clusterColors = [
+                            new THREE.Color(colors.indigo),
+                            new THREE.Color(colors.teal),
+                            new THREE.Color(colors.violet)
+                          ];
+
+                          const particleCluster = new Uint8Array(particleCount);
+                          const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+                          for (let i = 0; i < particleCount; i++) {
+                            const clusterIdx = i % 3;
+                            particleCluster[i] = clusterIdx;
+                            const centroid = centroids[clusterIdx];
+                            const spread = 2.8;
+
+                            const tx = centroid.x + (Math.random() - 0.5) * spread;
+                            const ty = centroid.y + (Math.random() - 0.5) * spread;
+                            const tz = centroid.z + (Math.random() - 0.5) * (spread * 0.2);
+
+                            targetPositions[i * 3] = tx;
+                            targetPositions[i * 3 + 1] = ty;
+                            targetPositions[i * 3 + 2] = tz;
+
+                            if (prefersReducedMotion) {
+                              positions[i * 3] = tx;
+                              positions[i * 3 + 1] = ty;
+                              positions[i * 3 + 2] = tz;
+                            } else {
+                              const x = (Math.random() - 0.5) * 22;
+                              const y = (Math.random() - 0.5) * 14;
+                              const z = (Math.random() - 0.5) * 2;
+                              initialPositions[i * 3] = x;
+                              initialPositions[i * 3 + 1] = y;
+                              initialPositions[i * 3 + 2] = z;
+                              positions[i * 3] = x;
+                              positions[i * 3 + 1] = y;
+                              positions[i * 3 + 2] = z;
+                            }
+
+                            const color = clusterColors[clusterIdx];
+                            colorAttrs[i * 3] = color.r;
+                            colorAttrs[i * 3 + 1] = color.g;
+                            colorAttrs[i * 3 + 2] = color.b;
+                          }
+
+                          geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                          geometry.setAttribute('color', new THREE.BufferAttribute(colorAttrs, 3));
+
+                          const material = new THREE.PointsMaterial({
+                            size: 0.14,
+                            vertexColors: true,
+                            transparent: true,
+                            opacity: 0.8,
+                            sizeAttenuation: true
+                          });
+
+                          const points = new THREE.Points(geometry, material);
+                          scene.add(points);
+
+                          const centroidGroup = new THREE.Group();
+                          scene.add(centroidGroup);
+                          centroidGroup.visible = prefersReducedMotion;
+
+                          centroids.forEach((pos, i) => {
+                            const ringGeo = new THREE.RingGeometry(0.3, 0.35, 32);
+                            const ringMat = new THREE.MeshBasicMaterial({ color: clusterColors[i], transparent: true, opacity: prefersReducedMotion ? 0.6 : 0 });
+                            const ring = new THREE.Mesh(ringGeo, ringMat);
+                            ring.position.copy(pos);
+                            centroidGroup.add(ring);
+
+                            const glowGeo = new THREE.SphereGeometry(0.5, 32, 32);
+                            const glowMat = new THREE.MeshBasicMaterial({ color: clusterColors[i], transparent: true, opacity: prefersReducedMotion ? 0.1 : 0 });
+                            const glow = new THREE.Mesh(glowGeo, glowMat);
+                            glow.position.copy(pos);
+                            centroidGroup.add(glow);
+                          });
+
+                          let startTime = Date.now();
+                          const scatterDuration = 1000;
+                          const moveDuration = 3000;
+                          const initialDuration = 4000;
+                          const holdA = 2500;
+                          const cycleDuration = 6000;
+                          const expDuration = 1800;
+                          const recDuration = 1800;
+
+                          function animate() {
+                            requestAnimationFrame(animate);
+                            const elapsed = Date.now() - startTime;
+                            let pulseAmount = 0.02;
+
+                            if (!prefersReducedMotion) {
+                              const moveT = Math.min(Math.max((elapsed - scatterDuration) / moveDuration, 0), 1);
+                              const ease = moveT < 0.5 ? 2 * moveT * moveT : -1 + (4 - 2 * moveT) * moveT;
+                              const posAttr = geometry.attributes.position;
+
+                              if (moveT < 1.0) {
+                                for (let i = 0; i < particleCount; i++) {
+                                  const i3 = i * 3;
+                                  posAttr.array[i3] = initialPositions[i3] + (targetPositions[i3] - initialPositions[i3]) * ease;
+                                  posAttr.array[i3 + 1] = initialPositions[i3 + 1] + (targetPositions[i3 + 1] - initialPositions[i3 + 1]) * ease;
+                                  posAttr.array[i3 + 2] = initialPositions[i3 + 2] + (targetPositions[i3 + 2] - initialPositions[i3 + 2]) * ease;
+                                }
+                              } else {
+                                const postElapsed = elapsed - initialDuration;
+                                let expansionFactor = 1.0;
+
+                                if (postElapsed > holdA) {
+                                  const cycleTime = (postElapsed - holdA) % cycleDuration;
+                                  if (cycleTime < expDuration) {
+                                    const p = cycleTime / expDuration;
+                                    const e = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+                                    expansionFactor = 1.0 + 0.12 * e;
+                                  } else if (cycleTime < expDuration + recDuration) {
+                                    const p = (cycleTime - expDuration) / recDuration;
+                                    const e = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+                                    expansionFactor = 1.12 - 0.12 * e;
+                                    if (p > 0.8) pulseAmount = 0.05;
+                                  } else {
+                                    expansionFactor = 1.0;
+                                  }
+                                }
+
+                                const tSec = elapsed * 0.001;
+                                for (let i = 0; i < particleCount; i++) {
+                                  const i3 = i * 3;
+                                  const cIdx = particleCluster[i];
+                                  const cx = centroids[cIdx].x;
+                                  const cy = centroids[cIdx].y;
+                                  const cz = centroids[cIdx].z;
+
+                                  const ox = (targetPositions[i3] - cx) * expansionFactor;
+                                  const oy = (targetPositions[i3 + 1] - cy) * expansionFactor;
+                                  const oz = (targetPositions[i3 + 2] - cz) * expansionFactor;
+
+                                  const seed = i * 0.17;
+                                  const driftX = Math.sin(tSec * 0.6 + seed) * 0.02;
+                                  const driftY = Math.cos(tSec * 0.7 + seed) * 0.02;
+
+                                  posAttr.array[i3] = cx + ox + driftX;
+                                  posAttr.array[i3 + 1] = cy + oy + driftY;
+                                  posAttr.array[i3 + 2] = cz + oz;
+                                }
+                              }
+
+                              posAttr.needsUpdate = true;
+
+                              if (moveT > 0.8) {
+                                centroidGroup.visible = true;
+                                centroidGroup.children.forEach(child => {
+                                  const targetOpacity = (child.geometry.type === 'RingGeometry' ? 0.6 : 0.1);
+                                  child.material.opacity = Math.min(child.material.opacity + 0.02, targetOpacity);
+                                });
+                              }
+                            }
+
+                            if (centroidGroup.visible && !prefersReducedMotion) {
+                              const pulse = 1 + Math.sin(Date.now() * 0.002) * pulseAmount;
+                              centroidGroup.scale.set(pulse, pulse, pulse);
+                            }
+
+                            renderer.render(scene, camera);
+                          }
+
+                          if (window.ResizeObserver) {
+                            const ro = new ResizeObserver((entries) => {
+                              for (let entry of entries) {
+                                const cr = entry.contentRect;
+                                if (cr.width > 0 && cr.height > 0) {
+                                  camera.aspect = cr.width / cr.height;
+                                  camera.updateProjectionMatrix();
+                                  renderer.setSize(cr.width, cr.height);
+                                }
+                              }
+                            });
+                            ro.observe(container);
+                          } else {
+                            window.addEventListener('resize', () => {
+                              const w = container.clientWidth || 460;
+                              const h = container.clientHeight || 420;
+                              camera.aspect = w / h;
+                              camera.updateProjectionMatrix();
+                              renderer.setSize(w, h);
+                            });
+                          }
+
+                          animate();
+                        })();
+                        </script>
+                    </div>
+
+                    <!-- Overlay labels that fade in -->
+                    <div class="absolute inset-0 pointer-events-none">
+                        <div class="cluster-label absolute top-[20%] left-[25%] opacity-0 transition-opacity duration-1000 bg-white/80 backdrop-blur-sm border border-indigo-100 px-3 py-1 rounded-full text-xs font-bold text-indigo-600 shadow-sm">Cluster 01</div>
+                        <div class="cluster-label absolute top-[45%] right-[20%] opacity-0 transition-opacity duration-1000 bg-white/80 backdrop-blur-sm border border-teal-100 px-3 py-1 rounded-full text-xs font-bold text-teal-600 shadow-sm">Cluster 02</div>
+                        <div class="cluster-label absolute bottom-[25%] left-[40%] opacity-0 transition-opacity duration-1000 bg-white/80 backdrop-blur-sm border border-violet-100 px-3 py-1 rounded-full text-xs font-bold text-violet-600 shadow-sm">Cluster 03</div>
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 opacity-0 transition-opacity duration-1000 bg-slate-900/5 backdrop-blur-sm px-4 py-2 rounded-lg text-[10px] uppercase tracking-widest text-slate-500 font-bold whitespace-nowrap" id="viz-caption">
+                            DỮ LIỆU PHÂN TÁN → PHÂN KHÚC KHÁCH HÀNG
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Capability Strip -->
+    <section class="py-xl border-y border-outline-variant/50 bg-surface-container-lowest/50 rounded-2xl">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-lg max-w-5xl mx-auto px-md">
+            <div class="flex items-start gap-4 p-md rounded-xl hover:bg-surface-container-lowest transition-colors">
+                <div class="w-12 h-12 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 border border-teal-100">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">dataset</span>
+                </div>
+                <div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-2">RFM Analysis</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Phân tích mức độ gần đây, tần suất và giá trị giao dịch để mô tả hành vi khách hàng.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-4 p-md rounded-xl hover:bg-surface-container-lowest transition-colors">
+                <div class="w-12 h-12 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 border border-indigo-100">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">scatter_plot</span>
+                </div>
+                <div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-2">K-Means Clustering</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Đánh giá nhiều giá trị K bằng Elbow và Silhouette để tìm cấu trúc phân cụm phù hợp.</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-4 p-md rounded-xl hover:bg-surface-container-lowest transition-colors">
+                <div class="w-12 h-12 rounded-lg bg-violet-50 text-violet-600 flex items-center justify-center shrink-0 border border-violet-100">
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person_search</span>
+                </div>
+                <div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-2">Customer Profiling</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Mô tả đặc trưng RFM của từng nhóm và giúp người dùng hiểu sự khác biệt giữa các phân khúc.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="max-w-5xl mx-auto">
+        <div class="text-center mb-xl">
+            <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-4">Quy trình phân tích</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl mx-auto">Hệ thống được thiết kế tối giản, loại bỏ sự phức tạp kỹ thuật để tập trung vào việc tạo ra insight kinh doanh.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-lg relative">
+            <!-- Connecting Line (Desktop) -->
+            <div class="hidden md:block absolute top-1/2 left-[15%] right-[15%] h-px bg-outline-variant -z-10 transform -translate-y-1/2"></div>
+            <!-- Step 1 -->
+            <div class="bg-surface-container-lowest p-lg rounded-2xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all">
+                <div class="absolute -right-4 -top-8 text-[120px] font-bold text-surface-container-highest/50 group-hover:text-surface-container-highest transition-colors z-0 select-none">
+                    01
+                </div>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold mb-6">1</div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-3">Hiểu dữ liệu</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Kiểm tra, làm sạch và chuẩn hóa dữ liệu RFM trước khi đưa vào mô hình.</p>
+                </div>
+            </div>
+            <!-- Step 2 -->
+            <div class="bg-surface-container-lowest p-lg rounded-2xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all">
+                <div class="absolute -right-4 -top-8 text-[120px] font-bold text-surface-container-highest/50 group-hover:text-surface-container-highest transition-colors z-0 select-none">
+                    02
+                </div>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold mb-6">2</div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-3">Khám phá cấu trúc</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Đánh giá nhiều giá trị K bằng Elbow và Silhouette để lựa chọn cấu trúc phân cụm phù hợp.</p>
+                </div>
+            </div>
+            <!-- Step 3 -->
+            <div class="bg-surface-container-lowest p-lg rounded-2xl border border-outline-variant shadow-[0_4px_12px_rgba(0,0,0,0.02)] relative overflow-hidden group hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] transition-all">
+                <div class="absolute -right-4 -top-8 text-[120px] font-bold text-surface-container-highest/50 group-hover:text-surface-container-highest transition-colors z-0 select-none">
+                    03
+                </div>
+                <div class="relative z-10">
+                    <div class="w-10 h-10 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold mb-6">3</div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface mb-3">Biến cụm thành insight</h3>
+                    <p class="font-body-md text-body-md text-on-surface-variant">Hồ sơ hóa từng phân khúc và biến kết quả phân cụm thành insight dễ hiểu.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA -->
+    <section class="max-w-4xl mx-auto bg-primary-container/5 rounded-3xl border border-primary/20 p-2xl text-center relative overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20" style="background-image: radial-gradient(circle at 50% 0%, #4f46e5 0%, transparent 70%);"></div>
+        <div class="relative z-10">
+            <h2 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-6">Sẵn sàng khám phá khách hàng của bạn?</h2>
+            <p class="font-body-lg text-body-lg text-on-surface-variant mb-8 max-w-xl mx-auto">
+                Bắt đầu quy trình phân tích dữ liệu ngay hôm nay để đưa ra các quyết định chiến lược dựa trên dữ liệu thực tế.
+            </p>
+            <a href="/data" class="bg-primary text-on-primary px-xl py-4 rounded-lg font-title-md text-body-lg font-semibold hover:bg-primary/90 hover:shadow-lg transition-all active:scale-95 inline-flex items-center gap-2">
+                Bắt đầu phân tích
+                <span class="material-symbols-outlined">arrow_forward</span>
+            </a>
+        </div>
+    </section>
+
+</div>
+</main>
+</div>
+
+<script>
+  (function() {
+    setTimeout(() => {
+      const labels = document.querySelectorAll('.cluster-label');
+      labels.forEach(l => l.style.opacity = '1');
+      const caption = document.getElementById('viz-caption');
+      if (caption) caption.style.opacity = '1';
+    }, 2500);
+  })();
+</script>
+<script src="/static/js/app.js"></script>
+</body>
+</html>

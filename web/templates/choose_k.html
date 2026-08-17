@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html class="light" lang="vi">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CustomerInsight AI - Chọn K</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "secondary-container": "#86f2e4",
+                    "on-primary-container": "#dad7ff",
+                    "surface-container-low": "#eff4ff",
+                    "primary-fixed": "#e2dfff",
+                    "surface-container-high": "#dce9ff",
+                    "inverse-primary": "#c3c0ff",
+                    "on-error-container": "#93000a",
+                    "on-tertiary-container": "#ffd2be",
+                    "outline": "#777587",
+                    "error-container": "#ffdad6",
+                    "outline-variant": "#c7c4d8",
+                    "tertiary-fixed-dim": "#ffb695",
+                    "surface-container-highest": "#d3e4fe",
+                    "on-primary-fixed-variant": "#3323cc",
+                    "on-secondary-container": "#006f66",
+                    "on-tertiary-fixed-variant": "#7b2f00",
+                    "surface-container": "#e5eeff",
+                    "surface-variant": "#d3e4fe",
+                    "on-secondary-fixed": "#00201d",
+                    "on-secondary-fixed-variant": "#005049",
+                    "surface": "#f8f9ff",
+                    "primary-fixed-dim": "#c3c0ff",
+                    "on-background": "#0b1c30",
+                    "on-secondary": "#ffffff",
+                    "on-surface": "#0b1c30",
+                    "error": "#ba1a1a",
+                    "tertiary-container": "#a44100",
+                    "on-error": "#ffffff",
+                    "surface-bright": "#f8f9ff",
+                    "on-surface-variant": "#464555",
+                    "secondary-fixed-dim": "#6bd8cb",
+                    "inverse-surface": "#213145",
+                    "tertiary-fixed": "#ffdbcc",
+                    "secondary": "#006a61",
+                    "primary": "#3525cd",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#4d44e3",
+                    "surface-dim": "#cbdbf5",
+                    "inverse-on-surface": "#eaf1ff",
+                    "primary-container": "#4f46e5",
+                    "tertiary": "#7e3000",
+                    "on-primary": "#ffffff",
+                    "on-primary-fixed": "#0f0069",
+                    "on-tertiary-fixed": "#351000",
+                    "surface-container-lowest": "#ffffff",
+                    "background": "#f8f9ff",
+                    "secondary-fixed": "#89f5e7"
+                },
+                "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+                },
+                "spacing": {
+                    "grid-gutter": "24px",
+                    "lg": "24px",
+                    "base": "8px",
+                    "xs": "4px",
+                    "sm": "8px",
+                    "md": "16px",
+                    "container-padding": "32px",
+                    "2xl": "48px",
+                    "sidebar-width": "280px",
+                    "xl": "32px"
+                },
+                "fontFamily": {
+                    "title-md": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "label-sm": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg": ["Inter"]
+                },
+                "fontSize": {
+                    "title-md": ["20px", { "lineHeight": "1.4", "fontWeight": "600" }],
+                    "body-lg": ["16px", { "lineHeight": "1.6", "fontWeight": "400" }],
+                    "headline-lg-mobile": ["24px", { "lineHeight": "1.3", "fontWeight": "600" }],
+                    "display-lg": ["48px", { "lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                    "label-sm": ["12px", { "lineHeight": "1", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                    "body-md": ["14px", { "lineHeight": "1.5", "fontWeight": "400" }],
+                    "headline-lg": ["32px", { "lineHeight": "1.25", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    .level-1-shadow {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+    @media (min-width: 768px) {
+        body > header { margin-left: 280px; width: calc(100% - 280px); }
+        body > div > aside { position: fixed; inset: 0 auto 0 0; height: 100vh !important; top: 0 !important; z-index: 60; }
+        body > div > main { margin-left: 280px; width: calc(100% - 280px); flex: none; }
+    }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 w-full z-50 bg-surface-container-lowest border-b border-outline-variant shadow-sm flex justify-between items-center px-lg h-16">
+    <div class="flex items-center gap-md lg:hidden">
+        <button class="text-on-surface-variant hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">menu</span>
+        </button>
+    </div>
+    <div class="hidden lg:flex items-center gap-xl">
+        <div class="flex gap-lg h-full items-center">
+            <span class="text-on-surface-variant h-full flex items-center px-sm font-label-sm text-label-sm">Dự án / Customer Segmentation / Chọn K</span>
+        </div>
+    </div>
+</header>
+
+<div class="flex flex-1 pt-16">
+<!-- Side Navigation Bar -->
+<aside class="w-sidebar-width bg-surface-container-low border-r border-outline-variant flex flex-col justify-between py-lg shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40">
+    <div class="space-y-6">
+        <div class="px-lg flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shrink-0">
+                CI
+            </div>
+            <div class="min-w-0">
+                <div class="font-title-md text-title-md font-bold text-primary whitespace-nowrap">CustomerInsight AI</div>
+                <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Enterprise Analytics</div>
+            </div>
+        </div>
+        <nav class="space-y-2">
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/">
+                <span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+                Tổng quan
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/data">
+                <span class="material-symbols-outlined" data-icon="database">database</span>
+                Dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/eda">
+                <span class="material-symbols-outlined" data-icon="explore">explore</span>
+                Khám phá dữ liệu
+            </a>
+            <a class="flex items-center gap-md text-primary font-bold border-l-4 border-primary bg-primary-container/10 px-lg py-md cursor-pointer active:scale-95 font-body-md text-body-md transition-all duration-200" href="/choose-k">
+                <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">format_list_numbered</span>
+                Chọn K
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/clustering">
+                <span class="material-symbols-outlined" data-icon="group_work">group_work</span>
+                Phân cụm
+            </a>
+            <a class="flex items-center gap-md text-on-surface-variant px-lg py-md hover:bg-surface-container-highest/10 cursor-pointer active:scale-95 font-body-md text-body-md transition-colors duration-200" href="/results">
+                <span class="material-symbols-outlined" data-icon="assessment">assessment</span>
+                Kết quả
+            </a>
+        </nav>
+    </div>
+
+    <div class="px-lg mt-auto">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-md shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+            <div class="font-label-sm text-label-sm text-on-surface-variant mb-2 font-semibold">Tiến độ phân tích</div>
+            <div class="w-full bg-surface-container-high rounded-full h-2 mb-2">
+                <div id="workflow-progress-bar" class="bg-primary h-2 rounded-full transition-all duration-500" style="width: 40%"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs">
+                <span id="workflow-progress-count" class="font-label-sm text-[10px] text-on-surface-variant">2 / 5 bước hoàn tất</span>
+                <span id="workflow-progress-pct" class="font-label-sm text-[10px] text-primary font-bold">40%</span>
+            </div>
+            <p id="workflow-progress-next" class="font-label-sm text-[10px] text-on-surface-variant mt-2 border-t border-outline-variant/30 pt-2">Tiếp theo: Chọn K</p>
+        </div>
+    </div>
+</aside>
+
+<!-- Main Content Canvas -->
+<main class="flex-1 p-container-padding overflow-y-auto bg-background min-h-[calc(100vh-64px)] pb-32">
+<div class="max-w-[1200px] mx-auto space-y-lg">
+
+    <!-- PAGE HEADER -->
+    <div class="mb-lg">
+        <div class="flex items-center gap-sm mb-xs">
+            <span class="font-label-sm text-label-sm text-primary uppercase font-bold tracking-widest">BƯỚC 03 · CHỌN K</span>
+        </div>
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-md">
+            <div>
+                <h1 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs hidden md:block">Tìm số cụm phù hợp</h1>
+                <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface mb-xs md:hidden">Tìm số cụm phù hợp</h1>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl">Đánh giá nhiều giá trị K bằng Elbow và Silhouette để lựa chọn cấu trúc phân cụm phù hợp.</p>
+            </div>
+            <div class="flex items-center gap-sm bg-surface-container-lowest border border-outline-variant rounded-full px-md py-xs shadow-sm whitespace-nowrap h-fit">
+                <span class="material-symbols-outlined text-[16px] text-secondary" style="font-variation-settings: 'FILL' 1;">groups</span>
+                <span class="font-label-sm text-label-sm text-on-surface font-medium"><span id="header-row-count">720</span> khách hàng · 3 đặc trưng</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Error Alert Box -->
+    <div id="choose-k-error" class="hidden bg-error-container text-on-error-container border border-error/30 rounded-xl p-4 text-sm font-medium"></div>
+
+    <!-- ANALYSIS CONFIGURATION -->
+    <section class="bg-surface-container-lowest rounded-lg border border-outline-variant p-md mb-lg level-1-shadow flex flex-col md:flex-row items-center gap-lg justify-between">
+        <div class="flex flex-col md:flex-row items-start md:items-center gap-md w-full md:w-auto">
+            <div>
+                <h3 class="font-label-sm text-label-sm text-on-surface font-semibold uppercase tracking-wider mb-xs">Phạm vi phân tích</h3>
+                <div class="flex items-center gap-sm">
+                    <div class="flex items-center gap-xs">
+                        <label class="font-label-sm text-label-sm text-on-surface-variant" for="k-min">K min:</label>
+                        <input class="w-16 h-8 border-outline-variant rounded text-center font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary shadow-sm bg-surface-container-lowest" id="k-min" max="20" min="2" type="number" value="2"/>
+                    </div>
+                    <span class="text-outline-variant font-body-md">-</span>
+                    <div class="flex items-center gap-xs">
+                        <label class="font-label-sm text-label-sm text-on-surface-variant" for="k-max">K max:</label>
+                        <input class="w-16 h-8 border-outline-variant rounded text-center font-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary shadow-sm bg-surface-container-lowest" id="k-max" max="20" min="2" type="number" value="10"/>
+                    </div>
+                </div>
+            </div>
+            <!-- Expandable Configuration -->
+            <div class="relative group mt-sm md:mt-0">
+                <button class="flex items-center gap-xs text-on-surface-variant hover:text-primary transition-colors font-label-sm text-label-sm px-sm py-xs rounded border border-transparent hover:border-outline-variant hover:bg-surface-container">
+                    <span class="material-symbols-outlined text-[16px]">tune</span>
+                    Cấu hình mô hình
+                    <span class="material-symbols-outlined text-[16px]">expand_more</span>
+                </button>
+                <!-- Dropdown -->
+                <div class="absolute top-full left-0 mt-xs bg-surface-container-lowest border border-outline-variant rounded-lg p-sm shadow-md w-64 z-10 hidden group-hover:block">
+                    <div class="flex justify-between items-center mb-xs">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">init:</span>
+                        <span class="font-label-sm text-label-sm text-on-surface font-medium">k-means++</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-xs">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">n_init:</span>
+                        <span class="font-label-sm text-label-sm text-on-surface font-medium">10</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-xs">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">random_state:</span>
+                        <span class="font-label-sm text-label-sm text-on-surface font-medium">42</span>
+                    </div>
+                    <div class="flex justify-between items-center mb-xs">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">max_iter:</span>
+                        <span class="font-label-sm text-label-sm text-on-surface font-medium">300</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="font-label-sm text-label-sm text-on-surface-variant">tol:</span>
+                        <span class="font-label-sm text-label-sm text-on-surface font-medium">0.0001</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <button id="btn-run-analysis" class="bg-primary text-on-primary font-label-sm text-label-sm font-semibold px-lg py-[12px] rounded-md shadow-sm hover:bg-primary-container transition-colors duration-200 active:scale-95 w-full md:w-auto flex justify-center items-center gap-xs">
+            <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+            Phân tích K
+        </button>
+    </section>
+
+    <!-- MAIN ANALYTICAL WORKSPACE (3-column layout) -->
+    <div id="analytical-workspace" class="grid grid-cols-1 lg:grid-cols-12 gap-lg mb-lg">
+        <!-- Left: Elbow Chart -->
+        <div class="lg:col-span-4 bg-surface-container-lowest rounded-lg border border-outline-variant p-md level-1-shadow flex flex-col">
+            <h3 class="font-title-md text-title-md font-bold text-on-surface mb-xs">Elbow · Inertia</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md text-sm">Inertia giảm khi số cụm tăng. Quan sát nơi tốc độ giảm bắt đầu chậm lại.</p>
+            <div id="chart-elbow" class="w-full h-64"></div>
+        </div>
+        <!-- Center: Silhouette Score Chart -->
+        <div class="lg:col-span-4 bg-surface-container-lowest rounded-lg border border-outline-variant p-md level-1-shadow flex flex-col">
+            <h3 class="font-title-md text-title-md font-bold text-on-surface mb-xs">Silhouette Score</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant mb-md text-sm">Đo lường mức độ tách biệt giữa các cụm. Càng cao càng tốt.</p>
+            <div id="chart-silhouette" class="w-full h-64"></div>
+        </div>
+        <!-- Right: Recommendation Panel -->
+        <div class="lg:col-span-4 bg-surface-container-low border border-primary-fixed rounded-lg p-md level-1-shadow flex flex-col justify-between" id="recommendation-panel">
+            <div>
+                <div class="flex items-center gap-xs mb-md">
+                    <span class="text-primary font-title-md" id="panel-star-icon">✦</span>
+                    <h3 class="font-label-sm text-label-sm text-primary font-bold tracking-wider uppercase" id="panel-header-text">ĐỀ XUẤT TỪ PHÂN TÍCH</h3>
+                </div>
+                <div class="bg-surface-container-lowest rounded-md p-md border border-outline-variant mb-md text-center" id="panel-main-result">
+                    <p class="font-label-sm text-label-sm text-on-surface-variant mb-xs uppercase tracking-wide">Phù hợp nhất trong phạm vi đang xét</p>
+                    <div class="font-display-lg text-display-lg text-primary font-bold mb-xs" id="panel-k-value">K = 3</div>
+                    <div class="flex justify-center items-center gap-xs">
+                        <span class="font-body-md text-body-md text-on-surface-variant">Silhouette Score:</span>
+                        <span class="font-title-md text-title-md text-secondary font-bold" id="panel-sil-score">0.4588</span>
+                    </div>
+                </div>
+                <div id="panel-description">
+                    <p class="font-body-md text-body-md text-on-surface-variant mb-sm" id="panel-desc-text">
+                        K = 3 đạt Silhouette Score cao nhất trong phạm vi đã đánh giá, cho thấy mức độ phân tách cụm tốt nhất.
+                    </p>
+                    <p class="font-body-md text-body-md text-on-surface-variant opacity-80 text-sm">
+                        Elbow cho thấy Inertia giảm mạnh ở các giá trị K đầu tiên và tiếp tục giảm với tốc độ chậm dần khi K tăng.
+                    </p>
+                </div>
+            </div>
+            <button class="w-full bg-primary text-on-primary font-label-sm text-label-sm font-semibold px-lg py-[12px] mt-md rounded-md shadow-sm hover:bg-primary-container transition-colors duration-200 active:scale-95 flex justify-center items-center gap-xs" id="btn-confirm-k">
+                Xác nhận K = 3
+            </button>
+        </div>
+    </div>
+
+    <!-- CANDIDATE COMPARISON TABLE & GUIDED EXPLANATION -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-lg mb-lg">
+        <!-- Table (col-span-2) -->
+        <div class="lg:col-span-2 bg-surface-container-lowest rounded-lg border border-outline-variant level-1-shadow overflow-hidden">
+            <div class="px-md py-sm border-b border-outline-variant bg-surface flex justify-between items-center">
+                <h3 class="font-title-md text-title-md font-bold text-on-surface">So sánh chi tiết các giá trị K</h3>
+                <span class="font-label-sm text-xs text-on-surface-variant">Nhấp vào dòng để chọn K khác</span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-surface-container-low border-b border-outline-variant">
+                            <th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">K</th>
+                            <th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Inertia</th>
+                            <th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Silhouette Score</th>
+                            <th class="p-md font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Đánh giá</th>
+                        </tr>
+                    </thead>
+                    <tbody id="candidate-table-body" class="font-body-md text-on-surface divide-y divide-outline-variant">
+                        <!-- Populated dynamically by JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <!-- Guided Explanation -->
+        <div class="lg:col-span-1">
+            <details class="bg-surface-container-lowest rounded-lg border border-outline-variant level-1-shadow group" open>
+                <summary class="px-md py-sm font-title-md text-title-md font-bold text-on-surface cursor-pointer select-none border-b border-outline-variant flex justify-between items-center bg-surface hover:bg-surface-container-low transition-colors rounded-t-lg">
+                    Cách đọc kết quả
+                    <span class="material-symbols-outlined text-outline group-open:rotate-180 transition-transform duration-200">expand_more</span>
+                </summary>
+                <div class="p-md font-body-md text-body-md text-on-surface-variant space-y-sm bg-surface-container-lowest rounded-b-lg text-sm">
+                    <p><strong>Elbow (Inertia):</strong> Inertia luôn giảm khi K tăng. Điểm cần quan sát là nơi tốc độ giảm bắt đầu chậm lại (điểm 'khuỷu tay').</p>
+                    <div class="h-px w-full bg-outline-variant my-xs"></div>
+                    <p><strong>Silhouette Score:</strong> Silhouette đo mức độ gắn kết trong cụm và tách biệt giữa các cụm (khoảng [-1, 1]). Giá trị càng cao biểu thị phân cụm càng rõ nét.</p>
+                </div>
+            </details>
+        </div>
+    </div>
+
+    <!-- Fixed Bottom Action Bar for Next Step -->
+    <div class="fixed bottom-0 left-0 right-0 md:ml-sidebar-width bg-surface-container-lowest border-t border-outline-variant p-md flex justify-between items-center z-30 transition-transform translate-y-full shadow-lg" id="next-step-bar">
+        <div>
+            <h3 class="font-title-md text-title-md font-bold text-on-surface">Sẵn sàng phân cụm</h3>
+            <p class="font-body-md text-body-md text-on-surface-variant" id="next-step-subtitle">Bước tiếp theo: chạy K-Means với K = 3</p>
+        </div>
+        <a id="btn-to-clustering" href="/clustering" class="bg-primary text-on-primary font-label-sm text-label-sm font-semibold px-lg py-[12px] rounded-md shadow-sm hover:bg-primary-container transition-colors duration-200 active:scale-95 flex justify-center items-center gap-xs">
+            Tiếp tục phân cụm
+            <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
+        </a>
+    </div>
+
+</div>
+</main>
+</div>
+
+<script src="/static/js/app.js"></script>
+<script src="/static/js/choose_k.js"></script>
+</body>
+</html>

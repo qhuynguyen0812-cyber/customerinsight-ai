@@ -2,7 +2,6 @@
 
 import pytest
 
-from components.states import APP_STATE_KEY, get_app_state, reset_app_state
 from components.workflow import (
     FlashMessage,
     WorkflowStage,
@@ -98,12 +97,3 @@ def test_flash_is_consumed_once() -> None:
     set_flash(session, "K = 3 confirmed")
     assert consume_flash(session) == FlashMessage("K = 3 confirmed")
     assert consume_flash(session) is None
-
-
-def test_state_session_binding_is_stable_and_resettable() -> None:
-    session = {}
-    first = get_app_state(session)
-    assert get_app_state(session) is first
-    second = reset_app_state(session)
-    assert second is not first
-    assert session[APP_STATE_KEY] is second
