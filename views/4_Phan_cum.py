@@ -369,40 +369,36 @@ def render_page() -> None:
 
     col_sum, col_det = st.columns([1.6, 1.2], gap="large")
     with col_sum:
-        st.markdown(
-            f"""
-            <div class="ci-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
-                        <span style="color: #3525cd; font-size: 14px;">✦</span>
-                        <div style="font-size: 11px; font-weight: 700; color: #3525cd; text-transform: uppercase; letter-spacing: 0.06em;">
-                            Tóm tắt phân cụm
-                        </div>
-                    </div>
-                    <p style="font-size: 0.92rem; color: #464555; line-height: 1.6; margin: 0;">
-                        <strong>{total_customers:,}</strong> khách hàng đã được phân thành <strong>{num_clusters}</strong> phân khúc rõ rệt.
-                        Cluster {largest_cluster_id:02d} là nhóm lớn nhất chiếm <strong>{largest_pct:.1f}%</strong> khách hàng.
-                    </p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        summary_card_html = (
+            f'<div class="ci-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">'
+            f'<div>'
+            f'<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">'
+            f'<span style="color: #3525cd; font-size: 14px;">✦</span>'
+            f'<div style="font-size: 11px; font-weight: 700; color: #3525cd; text-transform: uppercase; letter-spacing: 0.06em;">'
+            f'Tóm tắt phân cụm'
+            f'</div>'
+            f'</div>'
+            f'<p style="font-size: 0.92rem; color: #464555; line-height: 1.6; margin: 0;">'
+            f'<strong>{total_customers:,}</strong> khách hàng đã được phân thành <strong>{num_clusters}</strong> phân khúc rõ rệt. '
+            f'Cluster {largest_cluster_id:02d} là nhóm lớn nhất chiếm <strong>{largest_pct:.1f}%</strong> khách hàng.'
+            f'</p>'
+            f'</div>'
+            f'</div>'
         )
+        st.markdown(summary_card_html, unsafe_allow_html=True)
 
     with col_det:
         with st.expander("Chi tiết lần chạy (Run Metadata)", expanded=False):
-            st.markdown(
-                f"""
-                <div style="font-size: 0.85rem; color: #0b1c30; display: flex; flex-direction: column; gap: 6px;">
-                    <div style="display: flex; justify-content: space-between;"><span>Số cụm (K):</span> <strong>{meta['k']}</strong></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Inertia:</span> <strong>{meta['inertia']:.4f}</strong></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Silhouette Score:</span> <strong>{meta['silhouette']:.4f}</strong></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Số lần lặp (Iterations):</span> <strong>{meta['iterations']}</strong></div>
-                    <div style="display: flex; justify-content: space-between;"><span>Thời gian chạy (Runtime):</span> <strong>{meta['runtime_seconds']:.4f} s</strong></div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            meta_details_html = (
+                f'<div style="font-size: 0.85rem; color: #0b1c30; display: flex; flex-direction: column; gap: 6px;">'
+                f'<div style="display: flex; justify-content: space-between;"><span>Số cụm (K):</span> <strong>{meta["k"]}</strong></div>'
+                f'<div style="display: flex; justify-content: space-between;"><span>Inertia:</span> <strong>{meta["inertia"]:.4f}</strong></div>'
+                f'<div style="display: flex; justify-content: space-between;"><span>Silhouette Score:</span> <strong>{meta["silhouette"]:.4f}</strong></div>'
+                f'<div style="display: flex; justify-content: space-between;"><span>Số lần lặp (Iterations):</span> <strong>{meta["iterations"]}</strong></div>'
+                f'<div style="display: flex; justify-content: space-between;"><span>Thời gian chạy (Runtime):</span> <strong>{meta["runtime_seconds"]:.4f} s</strong></div>'
+                f'</div>'
             )
+            st.markdown(meta_details_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
@@ -414,82 +410,76 @@ def render_page() -> None:
 
     with col_metrics:
         # Post-Run Metrics Cards
-        st.markdown(
-            f"""
-            <div class="ci-card" style="margin-bottom: 16px;">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">
-                    Chỉ số sau khi chạy
-                </div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <div class="ci-stat-box">
-                        <div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{total_customers:,}</div>
-                        <div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Khách hàng</div>
-                    </div>
-                    <div class="ci-stat-box">
-                        <div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{num_clusters}</div>
-                        <div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Phân khúc (K)</div>
-                    </div>
-                    <div class="ci-stat-box">
-                        <div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{meta['iterations']}</div>
-                        <div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Lần lặp</div>
-                    </div>
-                    <div class="ci-stat-box">
-                        <div style="font-size: 1.15rem; font-weight: 700; color: #006a61;">{meta['silhouette']:.4f}</div>
-                        <div style="font-size: 9px; font-weight: 600; color: #006a61; text-transform: uppercase;">Silhouette</div>
-                    </div>
-                    <div class="ci-stat-box" style="grid-column: span 2; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px;">
-                        <div style="font-size: 10px; font-weight: 600; color: #464555; text-transform: uppercase;">Inertia</div>
-                        <div style="font-size: 1.05rem; font-weight: 700; color: #0b1c30;">{meta['inertia']:.4f}</div>
-                    </div>
-                </div>
-                <div style="text-align: right; font-size: 11px; color: #464555; padding-top: 4px; border-top: 1px solid #eff4ff;">
-                    Runtime: <strong style="color: #0b1c30;">{meta['runtime_seconds']:.4f} s</strong>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        metrics_card_html = (
+            f'<div class="ci-card" style="margin-bottom: 16px;">'
+            f'<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">'
+            f'Chỉ số sau khi chạy'
+            f'</div>'
+            f'<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">'
+            f'<div class="ci-stat-box">'
+            f'<div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{total_customers:,}</div>'
+            f'<div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Khách hàng</div>'
+            f'</div>'
+            f'<div class="ci-stat-box">'
+            f'<div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{num_clusters}</div>'
+            f'<div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Phân khúc (K)</div>'
+            f'</div>'
+            f'<div class="ci-stat-box">'
+            f'<div style="font-size: 1.15rem; font-weight: 700; color: #0b1c30;">{meta["iterations"]}</div>'
+            f'<div style="font-size: 9px; font-weight: 600; color: #464555; text-transform: uppercase;">Lần lặp</div>'
+            f'</div>'
+            f'<div class="ci-stat-box">'
+            f'<div style="font-size: 1.15rem; font-weight: 700; color: #006a61;">{meta["silhouette"]:.4f}</div>'
+            f'<div style="font-size: 9px; font-weight: 600; color: #006a61; text-transform: uppercase;">Silhouette</div>'
+            f'</div>'
+            f'<div class="ci-stat-box" style="grid-column: span 2; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px;">'
+            f'<div style="font-size: 10px; font-weight: 600; color: #464555; text-transform: uppercase;">Inertia</div>'
+            f'<div style="font-size: 1.05rem; font-weight: 700; color: #0b1c30;">{meta["inertia"]:.4f}</div>'
+            f'</div>'
+            f'</div>'
+            f'<div style="text-align: right; font-size: 11px; color: #464555; padding-top: 4px; border-top: 1px solid #eff4ff;">'
+            f'Runtime: <strong style="color: #0b1c30;">{meta["runtime_seconds"]:.4f} s</strong>'
+            f'</div>'
+            f'</div>'
         )
+        st.markdown(metrics_card_html, unsafe_allow_html=True)
 
         # Distribution Bars
-        st.markdown(
-            """
-            <div class="ci-card">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">
-                    Phân bổ phân khúc
-                </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        dist_items = []
         for idx, row in profiles.iterrows():
             c_idx = int(row["Cluster"])
             color = CLUSTER_PALETTE[c_idx % len(CLUSTER_PALETTE)]
             count = int(row["count"])
             pct = float(row["percentage"])
-            st.markdown(
-                f"""
-                <div style="margin-bottom: 10px;">
-                    <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
-                        <span style="font-weight: 700; color: {color};">Cluster {c_idx + 1:02d} ({pct:.1f}%)</span>
-                        <span style="color: #464555; font-weight: 600;">{count:,} KH</span>
-                    </div>
-                    <div style="width: 100%; height: 6px; background: #eff4ff; border-radius: 9999px; overflow: hidden;">
-                        <div style="width: {pct}%; height: 100%; background: {color}; border-radius: 9999px;"></div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            dist_items.append(
+                f'<div style="margin-bottom: 10px;">'
+                f'<div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">'
+                f'<span style="font-weight: 700; color: {color};">Cluster {c_idx + 1:02d} ({pct:.1f}%)</span>'
+                f'<span style="color: #464555; font-weight: 600;">{count:,} KH</span>'
+                f'</div>'
+                f'<div style="width: 100%; height: 6px; background: #eff4ff; border-radius: 9999px; overflow: hidden;">'
+                f'<div style="width: {pct}%; height: 100%; background: {color}; border-radius: 9999px;"></div>'
+                f'</div>'
+                f'</div>'
             )
-        st.markdown("</div>", unsafe_allow_html=True)
+        distribution_html = "".join(dist_items)
+        st.markdown(
+            f'<div class="ci-card">'
+            f'<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">'
+            f'Phân bổ phân khúc'
+            f'</div>'
+            f'{distribution_html}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
     # --- PROFILE CARDS (HỒ SƠ PHÂN KHÚC) ---
     st.markdown(
-        """
-        <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;">
-            Hồ sơ phân khúc khách hàng
-        </div>
-        """,
+        '<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px;">'
+        'Hồ sơ phân khúc khách hàng'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -503,58 +493,54 @@ def render_page() -> None:
         seg_name = str(row["SegmentName"])
 
         with col:
-            st.markdown(
-                f"""
-                <div class="ci-profile-card" style="border-top: 4px solid {color}; margin-bottom: 16px;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <div style="width: 10px; height: 10px; border-radius: 50%; background: {color};"></div>
-                                <span style="font-size: 1rem; font-weight: 700; color: #0b1c30;">Cluster {c_idx + 1:02d}</span>
-                            </div>
-                            <span style="font-size: 11px; font-weight: 600; color: #464555;">{count:,} KH ({pct:.1f}%)</span>
-                        </div>
-                        <div style="font-size: 0.88rem; font-weight: 700; color: #3525cd; min-height: 40px; margin-bottom: 14px;">
-                            {seg_name}
-                        </div>
-                        <div style="font-size: 0.82rem; color: #464555; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #eff4ff; padding-top: 10px;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Recency TB (R):</span>
-                                <strong style="color: #0b1c30;">{row['mean Recency']:.2f}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Frequency TB (F):</span>
-                                <strong style="color: #0b1c30;">{row['mean Frequency']:.2f}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span>Monetary TB (M):</span>
-                                <strong style="color: #0b1c30;">{row['mean Monetary']:.2f}</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            profile_card_html = (
+                f'<div class="ci-profile-card" style="border-top: 4px solid {color}; margin-bottom: 16px;">'
+                f'<div>'
+                f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">'
+                f'<div style="display: flex; align-items: center; gap: 6px;">'
+                f'<div style="width: 10px; height: 10px; border-radius: 50%; background: {color};"></div>'
+                f'<span style="font-size: 1rem; font-weight: 700; color: #0b1c30;">Cluster {c_idx + 1:02d}</span>'
+                f'</div>'
+                f'<span style="font-size: 11px; font-weight: 600; color: #464555;">{count:,} KH ({pct:.1f}%)</span>'
+                f'</div>'
+                f'<div style="font-size: 0.88rem; font-weight: 700; color: #3525cd; min-height: 40px; margin-bottom: 14px;">'
+                f'{seg_name}'
+                f'</div>'
+                f'<div style="font-size: 0.82rem; color: #464555; display: flex; flex-direction: column; gap: 6px; border-top: 1px solid #eff4ff; padding-top: 10px;">'
+                f'<div style="display: flex; justify-content: space-between;">'
+                f'<span>Recency TB (R):</span>'
+                f'<strong style="color: #0b1c30;">{row["mean Recency"]:.2f}</strong>'
+                f'</div>'
+                f'<div style="display: flex; justify-content: space-between;">'
+                f'<span>Frequency TB (F):</span>'
+                f'<strong style="color: #0b1c30;">{row["mean Frequency"]:.2f}</strong>'
+                f'</div>'
+                f'<div style="display: flex; justify-content: space-between;">'
+                f'<span>Monetary TB (M):</span>'
+                f'<strong style="color: #0b1c30;">{row["mean Monetary"]:.2f}</strong>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
             )
+            st.markdown(profile_card_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
     # --- NEXT STEP CTA ---
-    st.markdown(
-        """
-        <div class="ci-banner">
-            <div>
-                <div style="font-size: 1.05rem; font-weight: 700; color: #0b1c30; margin-bottom: 2px;">
-                    Kết quả phân khúc đã sẵn sàng
-                </div>
-                <div style="font-size: 0.85rem; color: #464555;">
-                    Khám phá từng khách hàng, so sánh chi tiết hồ sơ phân khúc và xuất dữ liệu ở bước tiếp theo.
-                </div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    cta_banner_html = (
+        '<div class="ci-banner">'
+        '<div>'
+        '<div style="font-size: 1.05rem; font-weight: 700; color: #0b1c30; margin-bottom: 2px;">'
+        'Kết quả phân khúc đã sẵn sàng'
+        '</div>'
+        '<div style="font-size: 0.85rem; color: #464555;">'
+        'Khám phá từng khách hàng, so sánh chi tiết hồ sơ phân khúc và xuất dữ liệu ở bước tiếp theo.'
+        '</div>'
+        '</div>'
+        '</div>'
     )
+    st.markdown(cta_banner_html, unsafe_allow_html=True)
     col_cta_pad, col_cta_btn = st.columns([1, 1])
     with col_cta_btn:
         if st.button("Tiếp tục: Xem kết quả →", type="primary", use_container_width=True):

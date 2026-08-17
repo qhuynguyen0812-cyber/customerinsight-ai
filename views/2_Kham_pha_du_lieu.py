@@ -182,10 +182,11 @@ def render_page() -> None:
     with col_tech:
         st.markdown(
             """
-            <div class="ci-card" style="height: 100%;">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">
+            <div class="ci-card" style="margin-bottom: 12px;">
+                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em;">
                     Chi tiết kỹ thuật tiền xử lý
                 </div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -201,7 +202,6 @@ def render_page() -> None:
             st.write(
                 "Chuẩn hóa về mean=0 và std=1 chỉ trên 3 đặc trưng RFM để đảm bảo khoảng cách Euclid công bằng. CustomerID giữ nguyên định danh."
             )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 

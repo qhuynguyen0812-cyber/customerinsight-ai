@@ -146,39 +146,37 @@ def render_results_page(state) -> None:
         name = str(row["SegmentName"])
 
         with col:
-            st.markdown(
-                f"""
-                <div class="ci-profile-card" style="border-top: 4px solid {color}; margin-bottom: 16px;">
-                    <div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-                            <div style="display: flex; align-items: center; gap: 6px;">
-                                <div style="width: 10px; height: 10px; border-radius: 50%; background: {color};"></div>
-                                <span style="font-size: 1rem; font-weight: 700; color: #0b1c30;">Cluster {c_id + 1:02d}</span>
-                            </div>
-                            <span style="font-size: 11px; font-weight: 600; color: #464555;">{count:,} KH ({pct:.1f}%)</span>
-                        </div>
-                        <div style="font-size: 0.88rem; font-weight: 700; color: #3525cd; min-height: 38px; margin-bottom: 12px;">
-                            {name}
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; border-top: 1px solid #eff4ff; padding-top: 10px; text-align: center;">
-                            <div>
-                                <div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean R</div>
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row['mean Recency']:.2f}</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean F</div>
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row['mean Frequency']:.2f}</div>
-                            </div>
-                            <div>
-                                <div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean M</div>
-                                <div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row['mean Monetary']:.2f}</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            card_html = (
+                f'<div class="ci-profile-card" style="border-top: 4px solid {color}; margin-bottom: 16px;">'
+                f'<div>'
+                f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">'
+                f'<div style="display: flex; align-items: center; gap: 6px;">'
+                f'<div style="width: 10px; height: 10px; border-radius: 50%; background: {color};"></div>'
+                f'<span style="font-size: 1rem; font-weight: 700; color: #0b1c30;">Cluster {c_id + 1:02d}</span>'
+                f'</div>'
+                f'<span style="font-size: 11px; font-weight: 600; color: #464555;">{count:,} KH ({pct:.1f}%)</span>'
+                f'</div>'
+                f'<div style="font-size: 0.88rem; font-weight: 700; color: #3525cd; min-height: 38px; margin-bottom: 12px;">'
+                f'{name}'
+                f'</div>'
+                f'<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; border-top: 1px solid #eff4ff; padding-top: 10px; text-align: center;">'
+                f'<div>'
+                f'<div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean R</div>'
+                f'<div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row["mean Recency"]:.2f}</div>'
+                f'</div>'
+                f'<div>'
+                f'<div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean F</div>'
+                f'<div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row["mean Frequency"]:.2f}</div>'
+                f'</div>'
+                f'<div>'
+                f'<div style="font-size: 9px; color: #464555; text-transform: uppercase; font-weight: 600;">Mean M</div>'
+                f'<div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30;">{row["mean Monetary"]:.2f}</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
             )
+            st.markdown(card_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 24px;'></div>", unsafe_allow_html=True)
 
@@ -187,12 +185,11 @@ def render_results_page(state) -> None:
 
     with col_s360:
         st.markdown(
-            """
-            <div class="ci-card" style="height: 100%;">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">
-                    Chi tiết phân khúc (Segment 360)
-                </div>
-            """,
+            '<div class="ci-card" style="margin-bottom: 12px;">'
+            '<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em;">'
+            'Chi tiết phân khúc (Segment 360)'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
         seg_options = ["Tất cả"] + [f"Cluster {int(r['Cluster']) + 1:02d}" for _, r in current_profile.iterrows()]
@@ -200,17 +197,15 @@ def render_results_page(state) -> None:
 
         if selected_seg == "Tất cả":
             st.markdown(
-                f"""
-                <div style="padding-top: 10px;">
-                    <div style="font-size: 1rem; font-weight: 700; color: #0b1c30; margin-bottom: 4px;">Tổng quan toàn bộ tệp khách hàng</div>
-                    <p style="font-size: 0.88rem; color: #464555; line-height: 1.5; margin-bottom: 12px;">
-                        Bao gồm <strong>{total_customers:,}</strong> khách hàng đã qua tiền xử lý chuẩn hóa và phân cụm K-Means.
-                    </p>
-                    <div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 12px; font-size: 0.82rem; color: #464555;">
-                        Chọn từng Cluster trong danh sách trên để xem chi tiết đặc tính Recency, Frequency và Monetary trung bình của phân khúc đó.
-                    </div>
-                </div>
-                """,
+                f'<div class="ci-card" style="margin-top: 8px;">'
+                f'<div style="font-size: 1rem; font-weight: 700; color: #0b1c30; margin-bottom: 4px;">Tổng quan toàn bộ tệp khách hàng</div>'
+                f'<p style="font-size: 0.88rem; color: #464555; line-height: 1.5; margin-bottom: 12px;">'
+                f'Bao gồm <strong>{total_customers:,}</strong> khách hàng đã qua tiền xử lý chuẩn hóa và phân cụm K-Means.'
+                f'</p>'
+                f'<div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 12px; font-size: 0.82rem; color: #464555;">'
+                f'Chọn từng Cluster trong danh sách trên để xem chi tiết đặc tính Recency, Frequency và Monetary trung bình của phân khúc đó.'
+                f'</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
         else:
@@ -222,47 +217,43 @@ def render_results_page(state) -> None:
                 s_count = int(s_row["count"])
                 s_pct = float(s_row["percentage"]) if "percentage" in s_row else (float(s_count) / total_customers * 100.0 if total_customers else 0.0)
                 st.markdown(
-                    f"""
-                    <div style="padding-top: 6px;">
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                            <div style="width: 12px; height: 12px; border-radius: 50%; background: {s_color};"></div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{selected_seg} (Model ID: {c_idx})</div>
-                        </div>
-                        <div style="font-size: 0.9rem; font-weight: 700; color: #3525cd; margin-bottom: 12px;">
-                            {s_row['SegmentName']}
-                        </div>
-                        <div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: #464555;">Quy mô:</span>
-                                <strong>{s_count:,} KH ({s_pct:.1f}%)</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: #464555;">Recency trung bình:</span>
-                                <strong>{s_row['mean Recency']:.2f}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: #464555;">Frequency trung bình:</span>
-                                <strong>{s_row['mean Frequency']:.2f}</strong>
-                            </div>
-                            <div style="display: flex; justify-content: space-between;">
-                                <span style="color: #464555;">Monetary trung bình:</span>
-                                <strong>{s_row['mean Monetary']:.2f}</strong>
-                            </div>
-                        </div>
-                    </div>
-                    """,
+                    f'<div class="ci-card" style="margin-top: 8px;">'
+                    f'<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">'
+                    f'<div style="width: 12px; height: 12px; border-radius: 50%; background: {s_color};"></div>'
+                    f'<div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{selected_seg} (Model ID: {c_idx})</div>'
+                    f'</div>'
+                    f'<div style="font-size: 0.9rem; font-weight: 700; color: #3525cd; margin-bottom: 12px;">'
+                    f'{s_row["SegmentName"]}'
+                    f'</div>'
+                    f'<div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">'
+                    f'<div style="display: flex; justify-content: space-between;">'
+                    f'<span style="color: #464555;">Quy mô:</span>'
+                    f'<strong>{s_count:,} KH ({s_pct:.1f}%)</strong>'
+                    f'</div>'
+                    f'<div style="display: flex; justify-content: space-between;">'
+                    f'<span style="color: #464555;">Recency trung bình:</span>'
+                    f'<strong>{s_row["mean Recency"]:.2f}</strong>'
+                    f'</div>'
+                    f'<div style="display: flex; justify-content: space-between;">'
+                    f'<span style="color: #464555;">Frequency trung bình:</span>'
+                    f'<strong>{s_row["mean Frequency"]:.2f}</strong>'
+                    f'</div>'
+                    f'<div style="display: flex; justify-content: space-between;">'
+                    f'<span style="color: #464555;">Monetary trung bình:</span>'
+                    f'<strong>{s_row["mean Monetary"]:.2f}</strong>'
+                    f'</div>'
+                    f'</div>'
+                    f'</div>',
                     unsafe_allow_html=True,
                 )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_rfm_comp:
         st.markdown(
-            """
-            <div class="ci-card" style="height: 100%;">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px;">
-                    So sánh RFM giữa các phân khúc
-                </div>
-            """,
+            '<div class="ci-card" style="margin-bottom: 8px;">'
+            '<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em;">'
+            'So sánh RFM giữa các phân khúc'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
 
@@ -337,8 +328,6 @@ def render_results_page(state) -> None:
             )
             st.plotly_chart(fig_m, width="stretch")
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
     # --- CUSTOMER EXPLORER ---
@@ -385,39 +374,37 @@ def render_results_page(state) -> None:
             c_color = CLUSTER_PALETTE[c_cluster % len(CLUSTER_PALETTE)]
             c_prof = current_profile[current_profile["Cluster"] == c_cluster].iloc[0]
 
-            st.markdown(
-                f"""
-                <div style="background: #ffffff; border: 1px solid #dce9ff; border-radius: 10px; padding: 16px; margin-top: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                        <div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">Khách hàng: {selected_cid}</div>
-                        <span style="background: {c_color}18; color: {c_color}; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 9999px;">
-                            Cluster {c_cluster + 1:02d} (Model ID: {c_cluster})
-                        </span>
-                    </div>
-                    <div style="font-size: 0.9rem; color: #3525cd; font-weight: 600; margin-bottom: 14px;">
-                        Phân khúc: {c_row['SegmentName']}
-                    </div>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">
-                        <div class="ci-stat-box">
-                            <div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Recency (Gốc)</div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row['Recency']}</div>
-                            <div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof['mean Recency']:.2f}</div>
-                        </div>
-                        <div class="ci-stat-box">
-                            <div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Frequency (Gốc)</div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row['Frequency']}</div>
-                            <div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof['mean Frequency']:.2f}</div>
-                        </div>
-                        <div class="ci-stat-box">
-                            <div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Monetary (Gốc)</div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row['Monetary']}</div>
-                            <div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof['mean Monetary']:.2f}</div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
+            customer_detail_html = (
+                f'<div style="background: #ffffff; border: 1px solid #dce9ff; border-radius: 10px; padding: 16px; margin-top: 8px;">'
+                f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">'
+                f'<div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">Khách hàng: {selected_cid}</div>'
+                f'<span style="background: {c_color}18; color: {c_color}; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 9999px;">'
+                f'Cluster {c_cluster + 1:02d} (Model ID: {c_cluster})'
+                f'</span>'
+                f'</div>'
+                f'<div style="font-size: 0.9rem; color: #3525cd; font-weight: 600; margin-bottom: 14px;">'
+                f'Phân khúc: {c_row["SegmentName"]}'
+                f'</div>'
+                f'<div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center;">'
+                f'<div class="ci-stat-box">'
+                f'<div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Recency (Gốc)</div>'
+                f'<div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row["Recency"]}</div>'
+                f'<div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof["mean Recency"]:.2f}</div>'
+                f'</div>'
+                f'<div class="ci-stat-box">'
+                f'<div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Frequency (Gốc)</div>'
+                f'<div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row["Frequency"]}</div>'
+                f'<div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof["mean Frequency"]:.2f}</div>'
+                f'</div>'
+                f'<div class="ci-stat-box">'
+                f'<div style="font-size: 10px; color: #464555; text-transform: uppercase; font-weight: 600;">Monetary (Gốc)</div>'
+                f'<div style="font-size: 1.1rem; font-weight: 700; color: #0b1c30;">{c_row["Monetary"]}</div>'
+                f'<div style="font-size: 10px; color: #464555; margin-top: 2px;">TB Cụm: {c_prof["mean Monetary"]:.2f}</div>'
+                f'</div>'
+                f'</div>'
+                f'</div>'
             )
+            st.markdown(customer_detail_html, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 32px;'></div>", unsafe_allow_html=True)
 
@@ -425,25 +412,22 @@ def render_results_page(state) -> None:
     col_export, col_meta = st.columns([1.2, 1.2], gap="large")
 
     with col_export:
-        st.markdown(
-            f"""
-            <div class="ci-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 1.1rem; font-weight: 700; color: #0b1c30; margin-bottom: 4px;">Xuất kết quả phân cụm</h3>
-                    <p style="font-size: 0.88rem; color: #464555; margin-bottom: 14px;">
-                        Tải tệp CSV chứa danh sách toàn bộ {total_customers:,} khách hàng với gán cụm và nhãn phân đoạn kinh doanh.
-                    </p>
-                    <div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 10px;">
-                        <span style="font-size: 20px;">📄</span>
-                        <div>
-                            <div style="font-size: 0.9rem; font-weight: 700; color: #0b1c30;">customer_results.csv</div>
-                            <div style="font-size: 0.78rem; color: #464555;">Định dạng chuẩn CSV, mã hóa UTF-8 BOM, 6 cột dữ liệu</div>
-                        </div>
-                    </div>
-                </div>
-            """,
-            unsafe_allow_html=True,
+        export_card_html = (
+            f'<div class="ci-card" style="margin-bottom: 12px;">'
+            f'<h3 style="font-size: 1.1rem; font-weight: 700; color: #0b1c30; margin-bottom: 4px;">Xuất kết quả phân cụm</h3>'
+            f'<p style="font-size: 0.88rem; color: #464555; margin-bottom: 14px;">'
+            f'Tải tệp CSV chứa danh sách toàn bộ {total_customers:,} khách hàng với gán cụm và nhãn phân đoạn kinh doanh.'
+            f'</p>'
+            f'<div style="background: #f8f9ff; border: 1px solid #dce9ff; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 10px;">'
+            f'<span style="font-size: 20px;">📄</span>'
+            f'<div>'
+            f'<div style="font-size: 0.9rem; font-weight: 700; color: #0b1c30;">customer_results.csv</div>'
+            f'<div style="font-size: 0.78rem; color: #464555;">Định dạng chuẩn CSV, mã hóa UTF-8 BOM, 6 cột dữ liệu</div>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
         )
+        st.markdown(export_card_html, unsafe_allow_html=True)
         st.download_button(
             "Tải CSV kết quả khách hàng",
             data=customer_results_to_csv_bytes(customers),
@@ -453,41 +437,38 @@ def render_results_page(state) -> None:
             type="primary",
             use_container_width=True,
         )
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_meta:
         st.markdown(
-            """
-            <div class="ci-card" style="height: 100%;">
-                <div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px;">
-                    Thông tin mô hình & Kiểm tra toàn vẹn
-                </div>
-            """,
+            '<div class="ci-card" style="margin-bottom: 12px;">'
+            '<div style="font-size: 11px; font-weight: 700; color: #0b1c30; text-transform: uppercase; letter-spacing: 0.06em;">'
+            'Thông tin mô hình & Kiểm tra toàn vẹn'
+            '</div>'
+            '</div>',
             unsafe_allow_html=True,
         )
         st.subheader("Thông tin lần chạy")
         st.json(current_metadata)
 
-        st.markdown(
-            f"""
-            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; margin-top: 10px;">
-                <div style="display: flex; align-items: center; gap: 8px; color: #006a61;">
-                    <span>✓</span> <span><strong>{total_customers:,}/{total_customers:,}</strong> khách hàng đã được phân cụm thành công</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; color: #006a61;">
-                    <span>✓</span> <span>Mã <strong>CustomerID</strong> duy nhất được bảo toàn nguyên vẹn</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; color: #006a61;">
-                    <span>✓</span> <span>Không có giá trị <strong>Cluster</strong> hoặc <strong>SegmentName</strong> bị thiếu</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 8px; color: #006a61;">
-                    <span>✓</span> <span>Bộ dữ liệu RFM gốc được bảo toàn trong kết quả cuối</span>
-                </div>
-            </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
+        meta_integrity_html = (
+            f'<div class="ci-card" style="margin-top: 10px;">'
+            f'<div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">'
+            f'<div style="display: flex; align-items: center; gap: 8px; color: #006a61;">'
+            f'<span>✓</span> <span><strong>{total_customers:,}/{total_customers:,}</strong> khách hàng đã được phân cụm thành công</span>'
+            f'</div>'
+            f'<div style="display: flex; align-items: center; gap: 8px; color: #006a61;">'
+            f'<span>✓</span> <span>Mã <strong>CustomerID</strong> duy nhất được bảo toàn nguyên vẹn</span>'
+            f'</div>'
+            f'<div style="display: flex; align-items: center; gap: 8px; color: #006a61;">'
+            f'<span>✓</span> <span>Không có giá trị <strong>Cluster</strong> hoặc <strong>SegmentName</strong> bị thiếu</span>'
+            f'</div>'
+            f'<div style="display: flex; align-items: center; gap: 8px; color: #006a61;">'
+            f'<span>✓</span> <span>Bộ dữ liệu RFM gốc được bảo toàn trong kết quả cuối</span>'
+            f'</div>'
+            f'</div>'
+            f'</div>'
         )
+        st.markdown(meta_integrity_html, unsafe_allow_html=True)
 
 
 render_results_page(_page_state())

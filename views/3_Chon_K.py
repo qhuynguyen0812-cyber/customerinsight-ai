@@ -146,9 +146,10 @@ def render_page() -> None:
     with col_elbow:
         st.markdown(
             """
-            <div class="ci-card" style="height: 100%;">
+            <div class="ci-card" style="margin-bottom: 8px;">
                 <div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30; margin-bottom: 2px;">Elbow · Inertia</div>
-                <div style="font-size: 0.78rem; color: #464555; margin-bottom: 10px;">Inertia giảm dần khi K tăng. Quan sát điểm gãy (elbow).</div>
+                <div style="font-size: 0.78rem; color: #464555;">Inertia giảm dần khi K tăng. Quan sát điểm gãy (elbow).</div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -169,14 +170,14 @@ def render_page() -> None:
             yaxis=dict(title="Inertia"),
         )
         st.plotly_chart(fig_elbow, width="stretch")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_sil:
         st.markdown(
             """
-            <div class="ci-card" style="height: 100%;">
+            <div class="ci-card" style="margin-bottom: 8px;">
                 <div style="font-size: 0.95rem; font-weight: 700; color: #0b1c30; margin-bottom: 2px;">Silhouette Score</div>
-                <div style="font-size: 0.78rem; color: #464555; margin-bottom: 10px;">Đo lường mức độ tách biệt cụm. Càng cao càng tốt.</div>
+                <div style="font-size: 0.78rem; color: #464555;">Đo lường mức độ tách biệt cụm. Càng cao càng tốt.</div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -197,7 +198,6 @@ def render_page() -> None:
             yaxis=dict(title="Silhouette Score"),
         )
         st.plotly_chart(fig_sil, width="stretch")
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with col_rec:
         st.markdown(

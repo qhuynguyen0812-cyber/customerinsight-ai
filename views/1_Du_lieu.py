@@ -203,6 +203,7 @@ def render_page() -> None:
                         <span class="ci-chip" style="font-size: 11px; padding: 4px 10px;">Monetary</span>
                     </div>
                 </div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -213,7 +214,6 @@ def render_page() -> None:
                 st.error(str(exc))
             else:
                 commit_validated(result)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     with upload_col:
         st.markdown(
@@ -227,6 +227,7 @@ def render_page() -> None:
                         Tải lên tệp CSV có 4 cột: CustomerID, Recency, Frequency, Monetary.
                     </p>
                 </div>
+            </div>
             """,
             unsafe_allow_html=True,
         )
@@ -247,7 +248,6 @@ def render_page() -> None:
                 st.error(str(exc))
             else:
                 commit_validated(result)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
 
