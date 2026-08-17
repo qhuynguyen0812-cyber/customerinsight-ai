@@ -152,13 +152,13 @@
 <!-- Side Navigation Bar -->
 <aside class="w-sidebar-width bg-surface-container-low border-r border-outline-variant flex flex-col justify-between py-lg shrink-0 h-[calc(100vh-64px)] fixed top-16 left-0 z-40">
     <div class="space-y-6">
-        <div class="px-lg flex items-center gap-md">
-            <div class="w-10 h-10 rounded-lg bg-primary text-on-primary flex items-center justify-center font-bold text-lg shadow-sm">
+        <div class="px-lg flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg bg-primary-container text-on-primary flex items-center justify-center font-bold shrink-0">
                 CI
             </div>
-            <div>
-                <h1 class="font-title-md text-title-md text-on-surface leading-tight">CustomerInsight AI</h1>
-                <p class="font-label-sm text-label-sm text-on-surface-variant mt-0.5">Enterprise Analytics</p>
+            <div class="min-w-0">
+                <div class="font-title-md text-title-md font-bold text-primary whitespace-nowrap">CustomerInsight AI</div>
+                <div class="font-label-sm text-label-sm text-on-surface-variant uppercase tracking-wider whitespace-nowrap">Enterprise Analytics</div>
             </div>
         </div>
         <nav class="space-y-2">
@@ -246,71 +246,123 @@
 
         <!-- Pipeline Centerpiece -->
         <section class="bg-surface-container-lowest rounded-xl border border-outline-variant p-lg shadow-sm stagger-item delay-100">
-            <h3 class="font-title-md text-title-md text-on-surface mb-lg">Quy trình chuẩn bị dữ liệu</h3>
-            <div class="relative pt-md pb-md">
-                <!-- Background Line -->
-                <div class="absolute top-1/2 left-[10%] right-[10%] h-1 bg-outline-variant/30 -translate-y-1/2 rounded-full"></div>
-                <!-- Animated Fill Line -->
-                <div class="absolute top-1/2 left-[10%] h-1 bg-primary -translate-y-1/2 rounded-full pipeline-fill" id="pipeline-progress" style="width: 0%;"></div>
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                <div>
+                    <h3 class="font-title-md text-title-md font-bold text-on-surface">Quy trình chuẩn bị dữ liệu</h3>
+                    <p class="font-body-md text-xs text-on-surface-variant mt-0.5">Pipeline tiền xử lý đặc trưng RFM tự động chuẩn hóa</p>
+                </div>
+                <span id="pipeline-overall-badge" class="self-start sm:self-auto px-3 py-1 bg-secondary-container/40 text-on-secondary-container rounded-full text-xs font-semibold flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[14px]">verified</span> 5/5 Hoàn tất
+                </span>
+            </div>
 
-                <div class="relative flex justify-between">
-                    <!-- Step 1 -->
-                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="100">
-                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
-                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">dataset</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Dữ liệu gốc</p>
-                            <p class="text-[10px] text-on-surface-variant mt-1"><span id="pipe-row-count">720</span> khách hàng, 3 RFM</p>
-                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
-                        </div>
+            <!-- Unified 5-Column Single-Grid Pipeline Component -->
+            <div class="grid grid-cols-5 relative w-full gap-0">
+                <!-- Step 1 -->
+                <div id="pipe-step-1" class="relative flex flex-col items-center text-center px-1">
+                    <!-- Connector 1-2 -->
+                    <div class="absolute top-[22px] -translate-y-1/2 left-1/2 w-full h-0.5 bg-outline-variant/30 z-0">
+                        <div id="pipe-conn-1" class="h-full bg-secondary transition-all duration-300" style="width: 100%;"></div>
                     </div>
-                    <!-- Step 2 -->
-                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="300">
-                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
-                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">cleaning_services</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Giá trị thiếu</p>
-                            <p class="text-[10px] text-on-surface-variant mt-1">Median Imputation</p>
-                            <p class="text-[10px] text-on-surface-variant"><span id="pipe-missing-count">0</span> giá trị thiếu</p>
-                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
-                        </div>
+
+                    <!-- Node 1 -->
+                    <div id="pipe-node-1" class="relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300">
+                        <span class="material-symbols-outlined text-[20px]" data-icon="dataset">dataset</span>
                     </div>
-                    <!-- Step 3 -->
-                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="500">
-                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
-                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">content_cut</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Ngoại lệ</p>
-                            <p class="text-[10px] text-on-surface-variant mt-1">IQR Clipping</p>
-                            <p class="text-[10px] text-on-surface-variant"><span id="pipe-outlier-count">117</span> được phát hiện</p>
-                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
-                        </div>
+
+                    <!-- Step 1 Text -->
+                    <div class="mt-3.5 flex flex-col items-center w-full">
+                        <p class="font-label-sm text-xs font-bold text-on-surface">1. Dữ liệu gốc</p>
+                        <p class="text-[11px] text-on-surface-variant mt-1 leading-tight"><span id="pipe-row-count">720</span> khách hàng, 3 RFM</p>
+                        <p id="pipe-status-1" class="text-[10px] text-secondary font-semibold mt-1.5 flex items-center justify-center gap-0.5">
+                            <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> Hoàn tất
+                        </p>
                     </div>
-                    <!-- Step 4 -->
-                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="700">
-                        <div class="w-10 h-10 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest">
-                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">scale</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-label-sm text-label-sm font-bold text-on-surface">Chuẩn hóa</p>
-                            <p class="text-[10px] text-on-surface-variant mt-1">StandardScaler</p>
-                            <p class="text-[10px] text-on-surface-variant">R · F · M (mean=0, std=1)</p>
-                            <p class="text-[10px] text-secondary mt-1 flex items-center justify-center gap-1 font-medium"><span class="material-symbols-outlined text-[12px]">check_circle</span> Hoàn tất</p>
-                        </div>
+                </div>
+
+                <!-- Step 2 -->
+                <div id="pipe-step-2" class="relative flex flex-col items-center text-center px-1">
+                    <!-- Connector 2-3 -->
+                    <div class="absolute top-[22px] -translate-y-1/2 left-1/2 w-full h-0.5 bg-outline-variant/30 z-0">
+                        <div id="pipe-conn-2" class="h-full bg-secondary transition-all duration-300" style="width: 100%;"></div>
                     </div>
-                    <!-- Step 5 -->
-                    <div class="flex flex-col items-center gap-sm z-10 w-32 pipeline-step" data-delay="900">
-                        <div class="w-10 h-10 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm border-4 border-surface-container-lowest relative">
-                            <div class="absolute inset-0 rounded-full border-2 border-secondary opacity-20"></div>
-                            <span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">model_training</span>
-                        </div>
-                        <div class="text-center">
-                            <p class="font-label-sm text-label-sm font-bold text-secondary">Model Ready</p>
-                            <p class="text-[10px] text-on-surface-variant mt-1">Sẵn sàng phân cụm</p>
-                        </div>
+
+                    <!-- Node 2 -->
+                    <div id="pipe-node-2" class="relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300">
+                        <span class="material-symbols-outlined text-[20px]" data-icon="cleaning_services">cleaning_services</span>
+                    </div>
+
+                    <!-- Step 2 Text -->
+                    <div class="mt-3.5 flex flex-col items-center w-full">
+                        <p class="font-label-sm text-xs font-bold text-on-surface">2. Giá trị thiếu</p>
+                        <p class="text-[11px] text-on-surface-variant mt-1 leading-tight">Median Imputation</p>
+                        <p class="text-[10px] text-on-surface-variant/80"><span id="pipe-missing-count">0</span> giá trị thiếu</p>
+                        <p id="pipe-status-2" class="text-[10px] text-secondary font-semibold mt-1 flex items-center justify-center gap-0.5">
+                            <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> Hoàn tất
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 3 -->
+                <div id="pipe-step-3" class="relative flex flex-col items-center text-center px-1">
+                    <!-- Connector 3-4 -->
+                    <div class="absolute top-[22px] -translate-y-1/2 left-1/2 w-full h-0.5 bg-outline-variant/30 z-0">
+                        <div id="pipe-conn-3" class="h-full bg-secondary transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+
+                    <!-- Node 3 -->
+                    <div id="pipe-node-3" class="relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300">
+                        <span class="material-symbols-outlined text-[20px]" data-icon="content_cut">content_cut</span>
+                    </div>
+
+                    <!-- Step 3 Text -->
+                    <div class="mt-3.5 flex flex-col items-center w-full">
+                        <p class="font-label-sm text-xs font-bold text-on-surface">3. Ngoại lệ</p>
+                        <p class="text-[11px] text-on-surface-variant mt-1 leading-tight">IQR Clipping</p>
+                        <p class="text-[10px] text-on-surface-variant/80"><span id="pipe-outlier-count">117</span> được phát hiện</p>
+                        <p id="pipe-status-3" class="text-[10px] text-secondary font-semibold mt-1 flex items-center justify-center gap-0.5">
+                            <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> Hoàn tất
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div id="pipe-step-4" class="relative flex flex-col items-center text-center px-1">
+                    <!-- Connector 4-5 -->
+                    <div class="absolute top-[22px] -translate-y-1/2 left-1/2 w-full h-0.5 bg-outline-variant/30 z-0">
+                        <div id="pipe-conn-4" class="h-full bg-secondary transition-all duration-300" style="width: 100%;"></div>
+                    </div>
+
+                    <!-- Node 4 -->
+                    <div id="pipe-node-4" class="relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300">
+                        <span class="material-symbols-outlined text-[20px]" data-icon="scale">scale</span>
+                    </div>
+
+                    <!-- Step 4 Text -->
+                    <div class="mt-3.5 flex flex-col items-center w-full">
+                        <p class="font-label-sm text-xs font-bold text-on-surface">4. Chuẩn hóa</p>
+                        <p class="text-[11px] text-on-surface-variant mt-1 leading-tight">StandardScaler</p>
+                        <p class="text-[10px] text-on-surface-variant/80">R · F · M</p>
+                        <p id="pipe-status-4" class="text-[10px] text-secondary font-semibold mt-1 flex items-center justify-center gap-0.5">
+                            <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> Hoàn tất
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div id="pipe-step-5" class="relative flex flex-col items-center text-center px-1">
+                    <!-- Node 5 -->
+                    <div id="pipe-node-5" class="relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-secondary/20 shrink-0 transition-all duration-300">
+                        <span class="material-symbols-outlined text-[20px]" data-icon="model_training">model_training</span>
+                    </div>
+
+                    <!-- Step 5 Text -->
+                    <div class="mt-3.5 flex flex-col items-center w-full">
+                        <p id="pipe-title-5" class="font-label-sm text-xs font-bold text-secondary">5. Model Ready</p>
+                        <p class="text-[11px] text-on-surface-variant mt-1 leading-tight">Sẵn sàng phân cụm</p>
+                        <p id="pipe-status-5" class="text-[10px] text-secondary font-semibold mt-2.5 flex items-center justify-center gap-0.5">
+                            <span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> Sẵn sàng
+                        </p>
                     </div>
                 </div>
             </div>

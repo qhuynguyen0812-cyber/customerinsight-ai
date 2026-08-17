@@ -27,7 +27,8 @@
         opacity: 0.85,
         line: { color: "#2114a8", width: 1 }
       },
-      name: `Phân phối ${feature}`
+      name: `Phân phối ${feature}`,
+      hovertemplate: "Khoảng: %{x}<br>Số khách hàng: <b>%{y}</b><extra></extra>"
     };
 
     const histLayout = {
@@ -46,7 +47,13 @@
         zeroline: false
       },
       showlegend: false,
-      autosize: true
+      autosize: true,
+      hovermode: "closest",
+      hoverlabel: {
+        bgcolor: "#0b1c30",
+        bordercolor: "#0b1c30",
+        font: { family: "Inter, sans-serif", size: 12, color: "#ffffff" }
+      }
     };
 
     const config = { responsive: true, displayModeBar: false };
@@ -59,7 +66,9 @@
       name: "Trước IQR (Gốc)",
       marker: { color: "#ba1a1a" },
       boxpoints: "outliers",
-      jitter: 0.3
+      jitter: 0.3,
+      hoveron: "points",
+      hovertemplate: "<b>%{fullData.name}</b><br>Giá trị: %{y:.2f}<extra></extra>"
     };
 
     const boxTraceProc = {
@@ -67,7 +76,9 @@
       type: "box",
       name: "Sau IQR (Clipped)",
       marker: { color: "#006a61" },
-      boxpoints: false
+      boxpoints: false,
+      hoveron: "points",
+      hovertemplate: "<b>%{fullData.name}</b><br>Giá trị: %{y:.2f}<extra></extra>"
     };
 
     const boxLayout = {
@@ -86,7 +97,13 @@
       },
       showlegend: true,
       legend: { orientation: "h", y: -0.2, x: 0.1, font: { size: 10 } },
-      autosize: true
+      autosize: true,
+      hovermode: "closest",
+      hoverlabel: {
+        bgcolor: "#0b1c30",
+        bordercolor: "#0b1c30",
+        font: { family: "Inter, sans-serif", size: 12, color: "#ffffff" }
+      }
     };
 
     Plotly.newPlot("chart-boxplot", [boxTraceRaw, boxTraceProc], boxLayout, config);
@@ -115,7 +132,127 @@
     }
   }
 
-  function renderEDAState(state) {
+  function updatePipeline(state, animated = false) {
+    const rowCount = state.row_count || 720;
+    const eda = state.eda_data || {};
+    const missingCount = eda.missing_count || 0;
+    const outlierCount = eda.total_outliers || 117;
+
+    if (byId("pipe-row-count")) byId("pipe-row-count").textContent = rowCount;
+    if (byId("pipe-missing-count")) byId("pipe-missing-count").textContent = missingCount;
+    if (byId("pipe-outlier-count")) byId("pipe-outlier-count").textContent = outlierCount;
+
+    const badge = byId("pipeline-overall-badge");
+    const n1 = byId("pipe-node-1"), n2 = byId("pipe-node-2"), n3 = byId("pipe-node-3"), n4 = byId("pipe-node-4"), n5 = byId("pipe-node-5");
+    const c1 = byId("pipe-conn-1"), c2 = byId("pipe-conn-2"), c3 = byId("pipe-conn-3"), c4 = byId("pipe-conn-4");
+    const s1 = byId("pipe-status-1"), s2 = byId("pipe-status-2"), s3 = byId("pipe-status-3"), s4 = byId("pipe-status-4"), s5 = byId("pipe-status-5");
+    const t5 = byId("pipe-title-5");
+
+    const checkHtml = (text) => `<span class="material-symbols-outlined text-[12px]" style="font-variation-settings: 'FILL' 1;">check_circle</span> ${text}`;
+    const pendingHtml = (text) => `<span class="material-symbols-outlined text-[12px] text-on-surface-variant/40">radio_button_unchecked</span> <span class="text-on-surface-variant/60">${text}</span>`;
+
+    if (!state.preprocessed) {
+      if (badge) {
+        badge.className = "self-start sm:self-auto px-3 py-1 bg-surface-container-high text-on-surface-variant rounded-full text-xs font-semibold flex items-center gap-1";
+        badge.innerHTML = '<span class="material-symbols-outlined text-[14px]">pending</span> Chờ tiền xử lý';
+      }
+      if (n1) n1.className = "relative z-10 w-11 h-11 rounded-full bg-primary text-on-primary flex items-center justify-center shadow-sm ring-4 ring-primary/20 shrink-0 transition-all duration-300";
+      if (s1) s1.innerHTML = checkHtml("Đã sẵn sàng");
+
+      [n2, n3, n4, n5].forEach((n) => {
+        if (n) n.className = "relative z-10 w-11 h-11 rounded-full bg-surface-container-high text-on-surface-variant/40 flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300";
+      });
+      [c1, c2, c3, c4].forEach((c) => {
+        if (c) c.style.width = "0%";
+      });
+      if (s2) s2.innerHTML = pendingHtml("Chờ xử lý");
+      if (s3) s3.innerHTML = pendingHtml("Chờ xử lý");
+      if (s4) s4.innerHTML = pendingHtml("Chờ xử lý");
+      if (s5) s5.innerHTML = pendingHtml("Chưa kích hoạt");
+      if (t5) t5.className = "font-label-sm text-xs font-bold text-on-surface-variant/70";
+      return;
+    }
+
+    const completeNode = (node, isLast = false) => {
+      if (!node) return;
+      node.className = isLast
+        ? "relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-secondary/25 shrink-0 transition-all duration-300"
+        : "relative z-10 w-11 h-11 rounded-full bg-secondary text-on-secondary flex items-center justify-center shadow-sm ring-4 ring-white shrink-0 transition-all duration-300";
+    };
+
+    const pulseNode = (node) => {
+      if (!node) return;
+      node.style.transform = "scale(1.15)";
+      setTimeout(() => { node.style.transform = "scale(1)"; }, 220);
+    };
+
+    if (animated) {
+      if (badge) {
+        badge.className = "self-start sm:self-auto px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold flex items-center gap-1";
+        badge.innerHTML = '<span class="material-symbols-outlined text-[14px] animate-spin">sync</span> Đang chuẩn hóa...';
+      }
+
+      completeNode(n1);
+      if (s1) s1.innerHTML = checkHtml("Hoàn tất");
+
+      setTimeout(() => {
+        if (c1) c1.style.width = "100%";
+        setTimeout(() => {
+          completeNode(n2);
+          pulseNode(n2);
+          if (s2) s2.innerHTML = checkHtml("Hoàn tất");
+        }, 180);
+      }, 100);
+
+      setTimeout(() => {
+        if (c2) c2.style.width = "100%";
+        setTimeout(() => {
+          completeNode(n3);
+          pulseNode(n3);
+          if (s3) s3.innerHTML = checkHtml("Hoàn tất");
+        }, 180);
+      }, 350);
+
+      setTimeout(() => {
+        if (c3) c3.style.width = "100%";
+        setTimeout(() => {
+          completeNode(n4);
+          pulseNode(n4);
+          if (s4) s4.innerHTML = checkHtml("Hoàn tất");
+        }, 180);
+      }, 600);
+
+      setTimeout(() => {
+        if (c4) c4.style.width = "100%";
+        setTimeout(() => {
+          completeNode(n5, true);
+          pulseNode(n5);
+          if (t5) t5.className = "font-label-sm text-xs font-bold text-secondary";
+          if (s5) s5.innerHTML = checkHtml("Sẵn sàng");
+          if (badge) {
+            badge.className = "self-start sm:self-auto px-3 py-1 bg-secondary-container/40 text-on-secondary-container rounded-full text-xs font-semibold flex items-center gap-1";
+            badge.innerHTML = '<span class="material-symbols-outlined text-[14px]">verified</span> 5/5 Hoàn tất';
+          }
+        }, 180);
+      }, 850);
+    } else {
+      if (badge) {
+        badge.className = "self-start sm:self-auto px-3 py-1 bg-secondary-container/40 text-on-secondary-container rounded-full text-xs font-semibold flex items-center gap-1";
+        badge.innerHTML = '<span class="material-symbols-outlined text-[14px]">verified</span> 5/5 Hoàn tất';
+      }
+      [n1, n2, n3, n4].forEach((n) => completeNode(n));
+      completeNode(n5, true);
+      [c1, c2, c3, c4].forEach((c) => { if (c) c.style.width = "100%"; });
+      if (s1) s1.innerHTML = checkHtml("Hoàn tất");
+      if (s2) s2.innerHTML = checkHtml("Hoàn tất");
+      if (s3) s3.innerHTML = checkHtml("Hoàn tất");
+      if (s4) s4.innerHTML = checkHtml("Hoàn tất");
+      if (s5) s5.innerHTML = checkHtml("Sẵn sàng");
+      if (t5) t5.className = "font-label-sm text-xs font-bold text-secondary";
+    }
+  }
+
+  function renderEDAState(state, animated = false) {
     currentState = state;
     if (!state.dataset_loaded) {
       window.location.href = "/data";
@@ -138,6 +275,7 @@
       if (btnToChooseK) {
         btnToChooseK.classList.add("opacity-60", "pointer-events-none");
       }
+      updatePipeline(state, false);
       return;
     }
 
@@ -152,22 +290,8 @@
     const corr = eda.correlation || {};
     const statsTable = eda.stats_table || {};
 
-    // 1. Pipeline Centerpiece
-    const pipeProgress = byId("pipeline-progress");
-    if (pipeProgress) pipeProgress.style.width = "80%";
-
-    const steps = document.querySelectorAll(".pipeline-step");
-    steps.forEach((step) => {
-      const delay = parseInt(step.getAttribute("data-delay") || "100", 10);
-      setTimeout(() => {
-        step.style.opacity = "1";
-        step.style.transform = "translateY(0)";
-      }, delay);
-    });
-
-    if (byId("pipe-row-count")) byId("pipe-row-count").textContent = eda.row_count || rowCount;
-    if (byId("pipe-missing-count")) byId("pipe-missing-count").textContent = eda.missing_count || 0;
-    if (byId("pipe-outlier-count")) byId("pipe-outlier-count").textContent = eda.total_outliers || 0;
+    // 1. Update Pipeline Centerpiece
+    updatePipeline(state, animated);
 
     // 2. Metrics summary
     if (byId("stat-row-count")) byId("stat-row-count").textContent = eda.row_count || rowCount;
@@ -276,7 +400,7 @@
       const response = await fetch("/api/preprocess", { method: "POST" });
       const state = await response.json();
       if (!response.ok) throw new Error(state.detail || "Không thể thực hiện tiền xử lý.");
-      renderEDAState(state);
+      renderEDAState(state, true);
     } catch (err) {
       if (errorBox) {
         errorBox.textContent = err.message;
