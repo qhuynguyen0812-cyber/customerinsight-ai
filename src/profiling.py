@@ -20,8 +20,8 @@ PROFILE_REQUIRED_COLUMNS = [
 ]
 
 
-def _validated_business_data(data: pd.DataFrame) -> pd.DataFrame:
-    if not isinstance(data, pd.DataFrame) or data.empty:
+def _validated_business_data(data: pd.DataFrame | None) -> pd.DataFrame:
+    if data is None or not isinstance(data, pd.DataFrame) or data.empty:
         raise ValueError("Processed customer data must be a non-empty DataFrame.")
     missing = [column for column in ["CustomerID", *RFM_COLUMNS] if column not in data.columns]
     if missing:
@@ -51,25 +51,33 @@ def _validated_labels(labels: Sequence[int] | np.ndarray, row_count: int) -> np.
 
 def _semantic_names(profile: pd.DataFrame) -> dict[int, str]:
     """Derive deterministic, evidence-limited names from relative RFM ranks."""
+    if len(profile) == 1:
+        cluster_id = int(profile["Cluster"].iloc[0])
+        return {cluster_id: "Toàn bộ tập khách hàng (Tất cả đặc trưng trung bình)"}
+
     ranked = profile.sort_values(
         ["mean Monetary", "mean Frequency", "mean Recency", "Cluster"],
         ascending=[False, False, True, True],
         kind="stable",
     )
-    percentiles = profile.set_index("Cluster")[[
-        "mean Recency", "mean Frequency", "mean Monetary"
-    ]].rank(method="average", pct=True)
+    
+    # Calculate rank percentiles across clusters
+    rfm_metrics = profile.set_index("Cluster")[["mean Recency", "mean Frequency", "mean Monetary"]]
+    percentiles = rfm_metrics.rank(method="average", pct=True)
+    
     names: dict[int, str] = {}
     used: dict[str, int] = {}
+    
     for cluster in ranked["Cluster"].astype(int):
         scores = percentiles.loc[cluster]
         recency = "hoạt động gần đây" if scores["mean Recency"] <= 0.5 else "ít hoạt động gần đây"
         frequency = "tần suất cao" if scores["mean Frequency"] > 0.5 else "tần suất thấp"
         monetary = "giá trị cao" if scores["mean Monetary"] > 0.5 else "giá trị thấp"
+        
         base = f"{monetary.capitalize()} – {recency}, {frequency}"
         occurrence = used.get(base, 0) + 1
         used[base] = occurrence
-        # Ties are distinguished by their deterministic profile rank, never by raw label meaning.
+        
         names[cluster] = base if occurrence == 1 else f"{base} (nhóm {occurrence})"
     return names
 
@@ -80,20 +88,26 @@ def compute_cluster_profiles(
     """Build one TV6-compatible profile row per observed cluster."""
     customers = _validated_business_data(processed_df)
     labels = _validated_labels(cluster_labels, len(customers))
+    
     working = customers.assign(Cluster=labels)
     grouped = working.groupby("Cluster", sort=True, observed=True)
+    
     profile = grouped[RFM_COLUMNS].agg(["mean", "median", "min", "max", "std"])
     profile.columns = [f"{stat} {feature}" for feature, stat in profile.columns]
     profile = profile.reset_index()
+    
     profile.insert(1, "count", grouped.size().to_numpy())
     profile.insert(2, "percentage", profile["count"] / len(working) * 100.0)
     profile = profile.fillna({f"std {feature}": 0.0 for feature in RFM_COLUMNS})
+    
     names = _semantic_names(profile)
     profile.insert(1, "SegmentName", profile["Cluster"].map(names))
+    
     profile = profile.loc[:, PROFILE_REQUIRED_COLUMNS + [
         column for column in profile.columns if column not in PROFILE_REQUIRED_COLUMNS
     ]]
     validate_profile(profile)
+    
     if int(profile["count"].sum()) != len(working):
         raise ValueError("Profile counts do not cover every processed row.")
     return profile
@@ -103,18 +117,22 @@ def generate_business_interpretation(profile_df: pd.DataFrame) -> dict[int, dict
     """Return deterministic RFM descriptions and cautious suggested actions."""
     profile = validate_profile(profile_df)
     names = _semantic_names(profile)
-    return {
-        int(row["Cluster"]): {
-            "segment_name": names[int(row["Cluster"])],
-            "characteristics": names[int(row["Cluster"])],
+    
+    median_monetary = float(profile["mean Monetary"].median())
+    interpretation: dict[int, dict[str, str]] = {}
+    
+    for _, row in profile.iterrows():
+        c_id = int(row["Cluster"])
+        interpretation[c_id] = {
+            "segment_name": names[c_id],
+            "characteristics": names[c_id],
             "recommendation": (
                 "Ưu tiên duy trì tương tác và cân nhắc cơ hội gia tăng giá trị."
-                if row["mean Monetary"] >= profile["mean Monetary"].median()
+                if float(row["mean Monetary"]) >= median_monetary
                 else "Cân nhắc chiến dịch nuôi dưỡng hoặc tái kích hoạt phù hợp."
             ),
         }
-        for _, row in profile.iterrows()
-    }
+    return interpretation
 
 
 def run_clustering_workflow(state: AppState) -> dict[str, Any]:
@@ -125,15 +143,24 @@ def run_clustering_workflow(state: AppState) -> dict[str, Any]:
         raise ValueError("A confirmed K is required before clustering.")
     if state.raw_df is None:
         raise ValueError("Validated raw customers are required before clustering.")
+    
     customers = _validated_business_data(state.processed_df)
     if len(state.scaled_matrix) != len(customers):
         raise ValueError("Scaled features and processed customer rows are not aligned.")
 
     started = perf_counter()
     fit = run_kmeans(state.scaled_matrix, state.selected_k, state.solver_preferences)
-    silhouette = float(silhouette_score(state.scaled_matrix, fit.labels))
+    
+    # Calculate silhouette score safely (only if K >= 2 and distinct labels exist)
+    unique_labels = np.unique(fit.labels)
+    if len(unique_labels) > 1 and len(unique_labels) < len(state.scaled_matrix):
+        silhouette = float(silhouette_score(state.scaled_matrix, fit.labels))
+    else:
+        silhouette = 0.0
+
     profiles = compute_cluster_profiles(customers, fit.labels)
     interpretation = generate_business_interpretation(profiles)
+    
     assignments = customers[["CustomerID"]].assign(
         Cluster=fit.labels,
         SegmentName=pd.Series(fit.labels).map(
@@ -143,14 +170,25 @@ def run_clustering_workflow(state: AppState) -> dict[str, Any]:
     results = build_customer_results(
         state.raw_df.loc[:, ["CustomerID", *RFM_COLUMNS]], assignments
     )
+    
     effective = get_default_solver_kwargs()
     if isinstance(state.solver_preferences, Mapping):
         effective.update(state.solver_preferences)
+        
     metadata = {
-        "k": int(state.selected_k), **effective, "inertia": fit.inertia,
-        "silhouette": silhouette, "iterations": fit.iterations,
-        "runtime_seconds": perf_counter() - started,
+        "k": int(state.selected_k),
+        "init": str(effective.get("init", "k-means++")),
+        "n_init": int(effective.get("n_init", 10)),
+        "random_state": int(effective.get("random_state", 42)),
+        "max_iter": int(effective.get("max_iter", 300)),
+        "tol": float(effective.get("tol", 0.0001)),
+        "inertia": float(fit.inertia),
+        "silhouette": float(silhouette),
+        "iterations": int(fit.iterations),
+        "runtime_seconds": float(perf_counter() - started),
     }
+    
+    # Atomic state commit
     set_clustering_result(
         state, fit.model, fit.labels, profiles,
         run_metadata=metadata, results=results,
