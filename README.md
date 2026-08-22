@@ -5,11 +5,11 @@ Customer Segmentation using K-Means — AI Final Project.
 ## Authority
 
 1. Đề bài cuối kỳ của giảng viên.
-2. `CustomerInsight_AI_Implementation_Ready_Package_v1.1_TeamExecution` (locked implementation contract).
+2. `CustomerInsight_AI_Implementation_Ready_Package_v1.2_TeamExecution` (current Phase 2 implementation contract).
 3. Tài liệu môn học.
 4. Source code + tests.
 
-Code khác contract thì dừng và báo issue; không tự đoán behavior.
+Package v1.2 supersedes v1.1 for Phase 2. Code khác contract thì dừng và báo issue; không tự đoán behavior.
 
 ## Runtime
 
@@ -35,7 +35,7 @@ Monetary
 Raw CSV
 → Validation
 → Missing = Median
-→ Outlier = IQR clipping / Winsorization
+→ Outlier = IQR clipping (mặc định) hoặc Keep (Phase 2, khi tích hợp)
 → StandardScaler(R,F,M)
 → Elbow + Silhouette
 → Người dùng xác nhận K
@@ -49,7 +49,7 @@ Raw CSV
 
 Integration branch: `develop`.
 
-Feature branches (chỉ tạo sau khi approved baseline đã có canonical dataset):
+Historical Phase 1 feature branches:
 
 ```text
 feature/tv1-data-validation

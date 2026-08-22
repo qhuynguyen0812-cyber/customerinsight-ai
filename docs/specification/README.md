@@ -1,6 +1,9 @@
 # Locked Specification
 
-Authority package: `CustomerInsight_AI_Implementation_Ready_Package_v1.1_TeamExecution`.
+Current authority package: `CustomerInsight_AI_Implementation_Ready_Package_v1.2_TeamExecution`.
+
+Version 1.2 supersedes v1.1 for Phase 2 execution. The package itself is distributed
+outside this repository; this index records the current authority without replacing it.
 
 Day-1 mandatory reading order for the team:
 
