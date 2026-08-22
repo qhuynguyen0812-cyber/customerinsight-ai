@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import asdict
+import math
+from numbers import Real
 from pathlib import Path
 from typing import Any
 
@@ -14,7 +17,7 @@ from components.results_export import customer_results_to_csv_bytes
 from components.workflow import WorkflowStage, workflow_stage
 from src.clustering import analyze_candidate_k, recommend_k
 from src.preprocessing import PreprocessingError, run_pipeline_preprocessing
-from src.profiling import run_clustering_workflow
+from src.profiling import generate_business_interpretation, run_clustering_workflow
 from src.state import set_k_analysis, set_preprocessed_data, set_raw_dataset, set_selected_k
 from src.validation import DataValidationError, ValidatedDataset, load_csv_bytes, load_sample_dataset
 from web.session_store import BrowserSession, session_store
@@ -50,8 +53,23 @@ def _json_value(value: Any) -> Any:
     if value is None:
         return None
     if hasattr(value, "item"):
-        return value.item()
+        value = value.item()
+    if isinstance(value, Real) and not math.isfinite(float(value)):
+        return None
     return value
+
+
+def _json_safe(value: Any) -> Any:
+    """Recursively replace non-JSON numeric sentinels with ``null``."""
+    if isinstance(value, Mapping):
+        return {key: _json_safe(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_safe(item) for item in value]
+    return _json_value(value)
+
+
+def _json_response(content: Any, *, status_code: int = 200) -> JSONResponse:
+    return JSONResponse(_json_safe(content), status_code=status_code)
 
 
 def _state_payload(session: BrowserSession) -> dict[str, Any]:
@@ -153,7 +171,7 @@ def _state_payload(session: BrowserSession) -> dict[str, Any]:
             eda_data = {
                 "row_count": int(len(proc_df)),
                 "feature_count": 3,
-                "missing_count": 0,
+                "missing_count": int(raw_df[["Recency", "Frequency", "Monetary"]].isna().sum().sum()),
                 "total_outliers": sum(item["outliers"] for item in before_after.values()),
                 "before_after": before_after,
                 "correlation": corr_matrix,
@@ -164,7 +182,7 @@ def _state_payload(session: BrowserSession) -> dict[str, Any]:
             eda_data = {
                 "row_count": int(len(raw_df)),
                 "feature_count": 3,
-                "missing_count": 0,
+                "missing_count": int(raw_df[["Recency", "Frequency", "Monetary"]].isna().sum().sum()),
                 "raw_medians": {col: float(raw_df[col].median()) for col in ["Recency", "Frequency", "Monetary"]},
                 "raw_maxes": {col: float(raw_df[col].max()) for col in ["Recency", "Frequency", "Monetary"]},
             }
@@ -206,6 +224,7 @@ def _state_payload(session: BrowserSession) -> dict[str, Any]:
     clustering_data = None
     if clustered and state.cluster_profiles is not None:
         profiles_list = []
+        interpretations = generate_business_interpretation(state.cluster_profiles)
         for idx, row in state.cluster_profiles.iterrows():
             c_id = int(row["Cluster"])
             cnt = int(row["count"])
@@ -215,15 +234,7 @@ def _state_payload(session: BrowserSession) -> dict[str, Any]:
             m_mean = round(float(row["mean Monetary"]), 2)
             seg = str(row["SegmentName"])
 
-            rec = (
-                "Ưu tiên duy trì tương tác và cân nhắc cơ hội gia tăng giá trị."
-                if r_mean <= 50 and m_mean >= 1000
-                else (
-                    "Cân nhắc chiến dịch nuôi dưỡng hoặc tái kích hoạt phù hợp."
-                    if r_mean > 100
-                    else "Duy trì tần suất mua hàng và nâng cao mức độ gắn kết."
-                )
-            )
+            rec = interpretations[c_id]["recommendation"]
 
             profiles_list.append({
                 "cluster_id": c_id,
@@ -357,7 +368,7 @@ def results_page(request: Request):
 @app.get("/api/state")
 def get_state(request: Request):
     session_id, session = _session(request)
-    return _with_session(JSONResponse(_state_payload(session)), session_id)
+    return _with_session(_json_response(_state_payload(session)), session_id)
 
 
 @app.get("/api/results")
@@ -368,6 +379,7 @@ def get_results_data(request: Request):
         return _with_session(JSONResponse({"detail": "Chưa có kết quả phân tích."}, status_code=422), session_id)
 
     profiles_list = []
+    interpretations = generate_business_interpretation(state.cluster_profiles)
     counts_and_percentages = {"all": int(len(state.results))}
     for idx, row in state.cluster_profiles.iterrows():
         c_id = int(row["Cluster"])
@@ -379,15 +391,7 @@ def get_results_data(request: Request):
         seg = str(row["SegmentName"])
         counts_and_percentages[str(c_id)] = cnt
 
-        rec = (
-            "Frequency và Monetary trung bình cao nhất."
-            if r_mean <= 50 and m_mean >= 1000
-            else (
-                "Recency trung bình lớn nhất."
-                if r_mean > 100
-                else "Phân khúc có quy mô lớn nhất."
-            )
-        )
+        rec = interpretations[c_id]["characteristics"]
 
         profiles_list.append({
             "cluster_id": c_id,
@@ -439,7 +443,7 @@ def get_results_data(request: Request):
             "next_step": "Phân tích hoàn tất",
         },
     }
-    return _with_session(JSONResponse(results_payload), session_id)
+    return _with_session(_json_response(results_payload), session_id)
 
 
 @app.get("/api/export")
@@ -466,7 +470,7 @@ def load_sample(request: Request):
     try:
         dataset = load_sample_dataset(ROOT / "data" / "sample_customers.csv")
         _commit(session, dataset)
-        response = JSONResponse(_state_payload(session))
+        response = _json_response(_state_payload(session))
     except DataValidationError as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)
@@ -478,7 +482,7 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
     try:
         dataset = load_csv_bytes(await file.read())
         _commit(session, dataset)
-        response = JSONResponse(_state_payload(session))
+        response = _json_response(_state_payload(session))
     except DataValidationError as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)
@@ -498,8 +502,8 @@ def preprocess_dataset(request: Request):
             result["preprocessing_signature"],
             result["eda_summary"],
         )
-        response = JSONResponse(_state_payload(session))
-    except (PreprocessingError, Exception) as exc:
+        response = _json_response(_state_payload(session))
+    except (PreprocessingError, TypeError, ValueError) as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)
 
@@ -532,8 +536,8 @@ async def run_k_analysis(request: Request):
         k_metrics = analyze_candidate_k(session.app_state.scaled_matrix, k_min=k_min, k_max=k_max)
         recommended_k = recommend_k(k_metrics)
         set_k_analysis(session.app_state, k_metrics, recommended_k)
-        response = JSONResponse(_state_payload(session))
-    except Exception as exc:
+        response = _json_response(_state_payload(session))
+    except (TypeError, ValueError) as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)
 
@@ -565,8 +569,8 @@ async def select_k(request: Request):
             return _with_session(JSONResponse({"detail": f"K = {selected_k_val} không nằm trong danh sách các giá trị K đã phân tích."}, status_code=422), session_id)
 
         set_selected_k(session.app_state, selected_k_val)
-        response = JSONResponse(_state_payload(session))
-    except Exception as exc:
+        response = _json_response(_state_payload(session))
+    except (TypeError, ValueError) as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)
 
@@ -584,7 +588,7 @@ def run_cluster(request: Request):
 
     try:
         run_clustering_workflow(state)
-        response = JSONResponse(_state_payload(session))
-    except Exception as exc:
+        response = _json_response(_state_payload(session))
+    except (TypeError, ValueError) as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)
     return _with_session(response, session_id)

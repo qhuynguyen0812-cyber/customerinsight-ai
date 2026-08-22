@@ -1,12 +1,15 @@
-# TV6 Phase 1 contract and integration evidence
+# TV6 Phase 1 contract and integration evidence (historical)
+
+This file records the Phase 1 release as observed at that time. It is not current
+Phase 2 evidence; see `TV6_PHASE2_RELEASE_EVIDENCE.md` for the active gate.
 
 Package authority: `CustomerInsight_AI_Implementation_Ready_Package_v1.1_TeamExecution`, version `1.1-IR-TEAM`.
 
 ## Canonical integration seam
 
-TV5's `AppState`, obtained through `components.states.get_app_state()`, is the production authority. The Results page consumes `state.results`, `state.cluster_profiles`, and `state.run_metadata`; all three must exist and pass their TV6 validators before tables, metadata, or a download are exposed. It does not require a parallel `results_valid` flag.
+TV5's `AppState` was the production authority. The current FastAPI application obtains it from the per-browser session store. The Results page consumes `state.results`, `state.cluster_profiles`, and `state.run_metadata`; all three must exist before results are exposed.
 
-Flat `results_valid`, `customer_results`, `cluster_profiles`, and `run_metadata` keys remain only as an explicit compatibility adapter when no canonical `APP_STATE_KEY` exists. If canonical and legacy state coexist, canonical state always wins.
+Legacy Streamlit state adapters described by the original Phase 1 evidence are no longer part of the current FastAPI runtime.
 
 ## TV4 to TV6 handoff
 
@@ -30,7 +33,7 @@ TV5 dependency setters invalidate `model`, `labels`, `cluster_profiles`, `run_me
 
 ## Canonical 720-row evidence
 
-`tests/test_tv6_integration.py` executes the real `data/sample_customers.csv` path through TV1 validation, canonical raw commit, TV2 preprocessing and commit, TV3 K analysis and selection, TV4 clustering/profiling, TV6 validation, and CSV export.
+The historical integration run executed the real `data/sample_customers.csv` path through validation, preprocessing, K analysis and selection, clustering/profiling, result validation, and CSV export.
 
 - Input and processed rows: 720
 - Scaled shape: `(720, 3)`
@@ -48,9 +51,9 @@ A separate deliberate missing-value/outlier case proves profiles use processed v
 ## Executed technical gates (2026-08-15)
 
 - Cross-TV regression command covering the ten mandated suites plus TV6 integration: `120 passed`.
-- `python -m pytest -q -ra`: `120 passed` (one non-failing joblib CPU-detection warning).
+- The historical run reported `120 passed`; this count must not be treated as current Phase 2 evidence.
 - `python -m pytest --collect-only -q`: `120 tests collected`.
-- `python -m compileall -q app.py views src components tests`: passed.
+- The historical compile command referenced the former application layout and is retained only as history.
 - `python -m pip check`: `No broken requirements found.`
 - Imports of `components.results_export`, `src.profiling`, and `src.state`: passed.
 - `git diff --check`: passed (Git emitted only configured LF-to-CRLF working-copy notices).
