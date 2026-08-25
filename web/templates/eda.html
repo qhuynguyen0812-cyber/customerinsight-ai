@@ -232,13 +232,22 @@
             </div>
             <div>
                 <h3 class="font-title-md text-base font-semibold text-on-surface">Dữ liệu thô đã sẵn sàng cho tiền xử lý</h3>
-                <p class="font-body-md text-sm text-on-surface-variant">Thực hiện Median Imputation, IQR Clipping và StandardScaler trên 3 đặc trưng Recency, Frequency, Monetary.</p>
+                <p class="font-body-md text-sm text-on-surface-variant">Thực hiện Median Imputation, xử lý giá trị ngoại lệ theo phương pháp tùy chọn và chuẩn hóa StandardScaler.</p>
             </div>
         </div>
-        <button id="btn-run-preprocess" class="bg-primary text-on-primary font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap">
-            <span class="material-symbols-outlined text-[20px]">play_arrow</span>
-            Xử lý dữ liệu
-        </button>
+        <div class="flex flex-wrap items-end gap-md">
+            <div class="flex flex-col gap-xs">
+                <label for="outlier-strategy" class="font-label-sm text-[10px] text-on-surface-variant font-medium">Xử lý ngoại lệ:</label>
+                <select id="outlier-strategy" class="border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md text-sm text-on-surface">
+                    <option value="iqr_clip">IQR Clipping (Mặc định)</option>
+                    <option value="keep">Keep (Giữ nguyên)</option>
+                </select>
+            </div>
+            <button id="btn-run-preprocess" class="bg-primary text-on-primary font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2 shadow-md hover:shadow-lg active:scale-95 whitespace-nowrap">
+                <span class="material-symbols-outlined text-[20px]">play_arrow</span>
+                Xử lý dữ liệu
+            </button>
+        </div>
     </div>
 
     <!-- Post-Preprocess Results Container -->

@@ -15,7 +15,14 @@ from components.workflow import WorkflowStage, workflow_stage
 from src.clustering import analyze_candidate_k, recommend_k
 from src.preprocessing import PreprocessingError, run_pipeline_preprocessing
 from src.profiling import run_clustering_workflow
-from src.state import set_k_analysis, set_preprocessed_data, set_raw_dataset, set_selected_k
+from src.state import (
+    set_k_analysis,
+    set_preprocessed_data,
+    set_raw_dataset,
+    set_selected_k,
+    set_outlier_strategy,
+    set_solver_preferences,
+)
 from src.validation import DataValidationError, ValidatedDataset, load_csv_bytes, load_sample_dataset
 from web.session_store import BrowserSession, session_store
 
@@ -292,6 +299,8 @@ def _state_payload(session: BrowserSession) -> dict[str, Any]:
         "clustered": clustered,
         "results_ready": results_ready,
         "selected_k": state.selected_k,
+        "outlier_strategy": state.outlier_strategy or "iqr_clip",
+        "solver_preferences": state.solver_preferences,
         "row_count": int(len(state.raw_df)) if loaded else 0,
         "dataset_signature": state.dataset_signature,
         "preprocessing_signature": state.preprocessing_signature,
@@ -485,12 +494,28 @@ async def upload_dataset(request: Request, file: UploadFile = File(...)):
 
 
 @app.post("/api/preprocess")
-def preprocess_dataset(request: Request):
+async def preprocess_dataset(request: Request):
     session_id, session = _session(request)
     if session.app_state.raw_df is None:
         return _with_session(JSONResponse({"detail": "Chưa tải dữ liệu. Vui lòng tải dữ liệu trước khi tiền xử lý."}, status_code=422), session_id)
+
+    outlier_strategy = "iqr_clip"
     try:
-        result = run_pipeline_preprocessing(session.app_state.raw_df)
+        if request.headers.get("content-type", "").startswith("application/json"):
+            body = await request.json()
+            outlier_strategy = body.get("outlier_strategy", "iqr_clip")
+        else:
+            params = request.query_params
+            outlier_strategy = params.get("outlier_strategy", "iqr_clip")
+    except Exception:
+        pass
+
+    if outlier_strategy not in ("iqr_clip", "keep"):
+        return _with_session(JSONResponse({"detail": "Phương pháp xử lý ngoại lệ không hợp lệ."}, status_code=422), session_id)
+
+    try:
+        result = run_pipeline_preprocessing(session.app_state.raw_df, outlier_strategy=outlier_strategy)
+        set_outlier_strategy(session.app_state, outlier_strategy)
         set_preprocessed_data(
             session.app_state,
             result["processed_df"],
@@ -565,6 +590,56 @@ async def select_k(request: Request):
             return _with_session(JSONResponse({"detail": f"K = {selected_k_val} không nằm trong danh sách các giá trị K đã phân tích."}, status_code=422), session_id)
 
         set_selected_k(session.app_state, selected_k_val)
+        response = JSONResponse(_state_payload(session))
+    except Exception as exc:
+        response = JSONResponse({"detail": str(exc)}, status_code=422)
+    return _with_session(response, session_id)
+
+
+@app.post("/api/solver-preferences")
+async def save_solver_preferences(request: Request):
+    session_id, session = _session(request)
+    max_iter = None
+    tol = None
+    try:
+        if request.headers.get("content-type", "").startswith("application/json"):
+            body = await request.json()
+            if "max_iter" in body:
+                max_iter = body.get("max_iter")
+            if "tol" in body:
+                tol = body.get("tol")
+        else:
+            params = request.query_params
+            if "max_iter" in params:
+                max_iter = params.get("max_iter")
+            if "tol" in params:
+                tol = params.get("tol")
+    except Exception:
+        pass
+
+    prefs = {}
+    if max_iter is not None:
+        try:
+            max_iter_val = int(max_iter)
+            if max_iter_val < 1:
+                raise ValueError()
+            prefs["max_iter"] = max_iter_val
+        except ValueError:
+            return _with_session(JSONResponse({"detail": "max_iter phải là số nguyên dương."}, status_code=422), session_id)
+
+    if tol is not None:
+        try:
+            tol_val = float(tol)
+            if tol_val <= 0:
+                raise ValueError()
+            prefs["tol"] = tol_val
+        except ValueError:
+            return _with_session(JSONResponse({"detail": "tol phải là số thực dương."}, status_code=422), session_id)
+
+    try:
+        current_prefs = session.app_state.solver_preferences or {}
+        new_prefs = {**current_prefs, **prefs}
+        set_solver_preferences(session.app_state, new_prefs)
         response = JSONResponse(_state_payload(session))
     except Exception as exc:
         response = JSONResponse({"detail": str(exc)}, status_code=422)

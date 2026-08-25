@@ -276,18 +276,27 @@
     const kVal = state.selected_k || (state.clustering_data ? state.clustering_data.k : 3);
     const rowCount = state.row_count || 720;
 
+    // Sync input controls with solver preferences
+    const prefs = state.solver_preferences || {};
+    if (byId("solver-max-iter") && prefs.max_iter !== undefined) {
+      byId("solver-max-iter").value = prefs.max_iter;
+    }
+    if (byId("solver-tol") && prefs.tol !== undefined) {
+      byId("solver-tol").value = prefs.tol;
+    }
+
     // Header & Config
     if (byId("header-status-text")) byId("header-status-text").textContent = `Trạng thái: K = ${kVal} · ${rowCount} khách hàng`;
     if (byId("config-k-val")) byId("config-k-val").textContent = kVal;
 
     const data = state.clustering_data;
     if (data && data.profiles && data.profiles.length > 0) {
+      if (byId("results-area")) byId("results-area").classList.remove("hidden");
+
       // Config values
       if (byId("config-init-val")) byId("config-init-val").textContent = data.init;
       if (byId("config-ninit-val")) byId("config-ninit-val").textContent = data.n_init;
       if (byId("config-rs-val")) byId("config-rs-val").textContent = data.random_state;
-      if (byId("config-maxiter-val")) byId("config-maxiter-val").textContent = data.max_iter;
-      if (byId("config-tol-val")) byId("config-tol-val").textContent = data.tol;
 
       // Summary text
       const largest = [...data.profiles].sort((a, b) => b.count - a.count)[0];
@@ -333,6 +342,7 @@
         window.renderWorkflowProgress(state);
       }
     } else {
+      if (byId("results-area")) byId("results-area").classList.add("hidden");
       // Auto run clustering if not yet clustered
       runClustering();
     }
@@ -372,8 +382,66 @@
     }
   }
 
+  async function saveSolverPreferences() {
+    const maxIterInput = byId("solver-max-iter");
+    const tolInput = byId("solver-tol");
+    if (!maxIterInput || !tolInput) return;
+
+    const max_iter = parseInt(maxIterInput.value);
+    const tol = parseFloat(tolInput.value);
+
+    const errBox = byId("clustering-error");
+    if (errBox) errBox.classList.add("hidden");
+
+    if (isNaN(max_iter) || max_iter < 1) {
+      if (errBox) {
+        errBox.textContent = "Số lần lặp tối đa (max_iter) phải là số nguyên dương.";
+        errBox.classList.remove("hidden");
+      }
+      return;
+    }
+    if (isNaN(tol) || tol <= 0) {
+      if (errBox) {
+        errBox.textContent = "Ngưỡng hội tụ (tol) phải là số thực dương.";
+        errBox.classList.remove("hidden");
+      }
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/solver-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ max_iter: max_iter, tol: tol })
+      });
+      const state = await response.json();
+      if (!response.ok) throw new Error(state.detail || "Không thể lưu cấu hình nâng cao.");
+      renderClusteringState(state);
+    } catch (err) {
+      if (errBox) {
+        errBox.textContent = err.message;
+        errBox.classList.remove("hidden");
+      }
+    }
+  }
+
   const btnRun = byId("btn-run-clustering");
   if (btnRun) btnRun.addEventListener("click", runClustering);
+
+  const btnToggle = byId("btn-toggle-advanced");
+  const advancedPanel = byId("advanced-config-panel");
+  const chevron = byId("advanced-chevron");
+  if (btnToggle && advancedPanel && chevron) {
+    btnToggle.addEventListener("click", () => {
+      const isHidden = advancedPanel.classList.toggle("hidden");
+      chevron.style.transform = isHidden ? "rotate(0deg)" : "rotate(180deg)";
+    });
+  }
+
+  const maxIterInput = byId("solver-max-iter");
+  const tolInput = byId("solver-tol");
+  if (maxIterInput) maxIterInput.addEventListener("change", saveSolverPreferences);
+  if (tolInput) tolInput.addEventListener("change", saveSolverPreferences);
 
   // Initial load
   fetch("/api/state")

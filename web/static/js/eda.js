@@ -267,22 +267,36 @@
 
     const actionBanner = byId("preprocess-action-banner");
     const resultsContainer = byId("eda-results-container");
-
     const btnToChooseK = byId("btn-to-choose-k");
+    const strategySelect = byId("outlier-strategy");
+    const btnPreprocess = byId("btn-run-preprocess");
+
+    if (strategySelect && state.outlier_strategy) {
+      strategySelect.value = state.outlier_strategy;
+    }
+
+    if (actionBanner) {
+      actionBanner.classList.remove("hidden");
+    }
+
     if (!state.preprocessed) {
-      if (actionBanner) actionBanner.classList.remove("hidden");
       if (resultsContainer) resultsContainer.classList.add("opacity-50", "pointer-events-none");
       if (btnToChooseK) {
         btnToChooseK.classList.add("opacity-60", "pointer-events-none");
+      }
+      if (btnPreprocess) {
+        btnPreprocess.innerHTML = '<span class="material-symbols-outlined text-[20px]">play_arrow</span> Xử lý dữ liệu';
       }
       updatePipeline(state, false);
       return;
     }
 
-    if (actionBanner) actionBanner.classList.add("hidden");
     if (resultsContainer) resultsContainer.classList.remove("hidden", "opacity-50", "pointer-events-none");
     if (btnToChooseK) {
       btnToChooseK.classList.remove("opacity-60", "pointer-events-none");
+    }
+    if (btnPreprocess) {
+      btnPreprocess.innerHTML = '<span class="material-symbols-outlined text-[20px]">refresh</span> Xử lý lại dữ liệu';
     }
 
     const eda = state.eda_data || {};
@@ -352,6 +366,7 @@
       features.forEach((feat) => {
         const raw = statsTable.raw[feat] || {};
         const proc = statsTable.processed[feat] || {};
+        const labelText = state.outlier_strategy === "keep" ? "Đã xử lý (Keep)" : "Đã xử lý (IQR)";
 
         rowsHtml.push(`
           <tr class="hover:bg-surface-container-lowest transition-colors border-t border-outline-variant/50">
@@ -366,7 +381,7 @@
             <td class="py-2 px-4 text-right font-medium text-error">${formatNumber(raw.max)}</td>
           </tr>
           <tr class="hover:bg-surface-container-lowest transition-colors bg-surface-container-low/20">
-            <td class="py-2 px-4 text-secondary text-xs"><span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-medium">Đã xử lý (IQR)</span></td>
+            <td class="py-2 px-4 text-secondary text-xs"><span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-medium">${labelText}</span></td>
             <td class="py-2 px-4 text-right font-medium text-secondary">${formatNumber(proc.mean)}</td>
             <td class="py-2 px-4 text-right text-on-surface-variant">${formatNumber(proc.std)}</td>
             <td class="py-2 px-4 text-right text-on-surface-variant">${formatNumber(proc.min)}</td>
@@ -389,6 +404,8 @@
   async function runPreprocess() {
     const btn = byId("btn-run-preprocess");
     const errorBox = byId("eda-error");
+    const strategySelect = byId("outlier-strategy");
+    const strategy = strategySelect ? strategySelect.value : "iqr_clip";
     if (errorBox) errorBox.classList.add("hidden");
 
     if (btn) {
@@ -397,7 +414,11 @@
     }
 
     try {
-      const response = await fetch("/api/preprocess", { method: "POST" });
+      const response = await fetch("/api/preprocess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outlier_strategy: strategy })
+      });
       const state = await response.json();
       if (!response.ok) throw new Error(state.detail || "Không thể thực hiện tiền xử lý.");
       renderEDAState(state, true);

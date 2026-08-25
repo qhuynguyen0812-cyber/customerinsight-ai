@@ -25,6 +25,7 @@ from web.app import (
     run_cluster,
     get_results_data,
     export_results_csv,
+    save_solver_preferences,
 )
 
 
@@ -116,13 +117,15 @@ def test_upload_csv_valid_and_invalid():
 
 
 def test_gating_unloaded_endpoints():
-    sid = "sess-empty-gates"
-    # Calling preprocess before loading dataset
-    r_prep = preprocess_dataset(make_request("POST", "/api/preprocess", sid))
-    assert r_prep.status_code == 422
-    # Calling cluster before loading/selecting K
-    r_clust = run_cluster(make_request("POST", "/api/cluster", sid))
-    assert r_clust.status_code == 422
+    async def _run():
+        sid = "sess-empty-gates"
+        # Calling preprocess before loading dataset
+        r_prep = await preprocess_dataset(make_request("POST", "/api/preprocess", sid))
+        assert r_prep.status_code == 422
+        # Calling cluster before loading/selecting K
+        r_clust = run_cluster(make_request("POST", "/api/cluster", sid))
+        assert r_clust.status_code == 422
+    asyncio.run(_run())
 
 
 def test_full_canonical_k3_workflow():
@@ -139,7 +142,7 @@ def test_full_canonical_k3_workflow():
         # Step 2: Preprocess
         r_eda_page = eda_page(make_request("GET", "/eda", real_sid))
         assert r_eda_page.status_code == 200
-        r_prep = preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
+        r_prep = await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
         assert r_prep.status_code == 200
         st_prep = json.loads(r_prep.body)
         assert st_prep["preprocessed"] is True
@@ -206,7 +209,7 @@ def test_dynamic_k5_workflow():
         m = re.search(r"customerinsight_session=([a-f0-9]+)", cookie_str)
         real_sid = m.group(1) if m else sid
 
-        preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
+        await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
         await run_k_analysis(make_request("POST", "/api/k-analysis", real_sid))
 
         sel_body = json.dumps({"selected_k": 5}).encode("utf-8")
@@ -236,3 +239,115 @@ def test_session_isolation():
     r_state_b = get_state(make_request("GET", "/api/state", sid_b))
     st_b = json.loads(r_state_b.body)
     assert st_b["dataset_loaded"] is False
+
+
+def test_outlier_strategy_keep_workflow():
+    async def _run():
+        sid = "sess-keep-outliers"
+        
+        # Load sample dataset
+        r_sample = load_sample(make_request("POST", "/api/dataset/sample", sid))
+        assert r_sample.status_code == 200
+        cookie_str = r_sample.headers.get("set-cookie", "")
+        m = re.search(r"customerinsight_session=([a-f0-9]+)", cookie_str)
+        real_sid = m.group(1) if m else sid
+        
+        # Preprocess with outlier_strategy = keep
+        prep_body = json.dumps({"outlier_strategy": "keep"}).encode("utf-8")
+        r_prep = await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid, body_bytes=prep_body))
+        assert r_prep.status_code == 200
+        
+        # Analyze and select K=3
+        await run_k_analysis(make_request("POST", "/api/k-analysis", real_sid))
+        sel_body = json.dumps({"selected_k": 3}).encode("utf-8")
+        await select_k(make_request("POST", "/api/select-k", real_sid, body_bytes=sel_body))
+        
+        # Run Clustering
+        r_clust = run_cluster(make_request("POST", "/api/cluster", real_sid))
+        assert r_clust.status_code == 200
+        
+        # Verify metrics (Inertia ≈ 882.51, Silhouette ≈ 0.4502, Iterations = 11)
+        r_res = get_results_data(make_request("GET", "/api/results", real_sid))
+        assert r_res.status_code == 200
+        res = json.loads(r_res.body)
+        meta = res["run_metadata"]
+        
+        assert abs(meta["inertia"] - 882.5146) < 0.1
+        assert abs(meta["silhouette"] - 0.4502) < 0.01
+        assert meta["iterations"] == 11
+
+    asyncio.run(_run())
+
+
+def test_solver_preferences_invalidation():
+    async def _run():
+        sid = "sess-solver-invalidation"
+        
+        # Run full workflow
+        r_sample = load_sample(make_request("POST", "/api/dataset/sample", sid))
+        assert r_sample.status_code == 200
+        cookie_str = r_sample.headers.get("set-cookie", "")
+        m = re.search(r"customerinsight_session=([a-f0-9]+)", cookie_str)
+        real_sid = m.group(1) if m else sid
+
+        await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
+        await run_k_analysis(make_request("POST", "/api/k-analysis", real_sid))
+        sel_body = json.dumps({"selected_k": 3}).encode("utf-8")
+        await select_k(make_request("POST", "/api/select-k", real_sid, body_bytes=sel_body))
+        run_cluster(make_request("POST", "/api/cluster", real_sid))
+        
+        # Verify results exist
+        r_state = get_state(make_request("GET", "/api/state", real_sid))
+        state = json.loads(r_state.body)
+        assert state["results_ready"] is True
+        
+        # Change solver preferences
+        pref_body = json.dumps({"max_iter": 400, "tol": 0.0002}).encode("utf-8")
+        r_pref = await save_solver_preferences(make_request("POST", "/api/solver-preferences", real_sid, body_bytes=pref_body))
+        assert r_pref.status_code == 200
+        
+        # Verify results invalidated
+        state_after = json.loads(r_pref.body)
+        assert state_after["results_ready"] is False
+        assert state_after["clustered"] is False
+        assert state_after["solver_preferences"] == {"max_iter": 400, "tol": 0.0002}
+
+    asyncio.run(_run())
+
+
+def test_outlier_strategy_invalidation_e2e():
+    async def _run():
+        sid = "sess-strategy-invalidation"
+        
+        # Run full workflow
+        r_sample = load_sample(make_request("POST", "/api/dataset/sample", sid))
+        assert r_sample.status_code == 200
+        cookie_str = r_sample.headers.get("set-cookie", "")
+        m = re.search(r"customerinsight_session=([a-f0-9]+)", cookie_str)
+        real_sid = m.group(1) if m else sid
+
+        await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid))
+        await run_k_analysis(make_request("POST", "/api/k-analysis", real_sid))
+        sel_body = json.dumps({"selected_k": 3}).encode("utf-8")
+        await select_k(make_request("POST", "/api/select-k", real_sid, body_bytes=sel_body))
+        run_cluster(make_request("POST", "/api/cluster", real_sid))
+        
+        # Verify results exist
+        r_state = get_state(make_request("GET", "/api/state", real_sid))
+        state = json.loads(r_state.body)
+        assert state["results_ready"] is True
+        
+        # Change preprocessing strategy
+        prep_body = json.dumps({"outlier_strategy": "keep"}).encode("utf-8")
+        r_prep = await preprocess_dataset(make_request("POST", "/api/preprocess", real_sid, body_bytes=prep_body))
+        assert r_prep.status_code == 200
+        
+        # Verify everything invalidated downstream
+        state_after = json.loads(r_prep.body)
+        assert state_after["results_ready"] is False
+        assert state_after["clustered"] is False
+        assert state_after["k_selected"] is False
+        assert state_after["k_analyzed"] is False
+        assert state_after["outlier_strategy"] == "keep"
+
+    asyncio.run(_run())

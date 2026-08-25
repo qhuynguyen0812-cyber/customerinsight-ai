@@ -20,6 +20,7 @@ class AppState:
     dataset_signature: str | None = None
 
     # TV2: preprocessing and EDA
+    outlier_strategy: str | None = None
     processed_df: Any | None = None
     scaled_matrix: Any | None = None
     preprocessing_signature: str | None = None
@@ -47,9 +48,10 @@ class AppState:
 STATE_DEPENDENCIES: Final[dict[str, tuple[str, ...]]] = {
     "raw_df": (),
     "dataset_signature": ("raw_df",),
-    "processed_df": ("raw_df", "dataset_signature"),
+    "outlier_strategy": (),
+    "processed_df": ("raw_df", "dataset_signature", "outlier_strategy"),
     "scaled_matrix": ("processed_df", "preprocessing_signature"),
-    "preprocessing_signature": ("raw_df", "dataset_signature"),
+    "preprocessing_signature": ("raw_df", "dataset_signature", "outlier_strategy"),
     "eda_summary": ("processed_df", "preprocessing_signature"),
     "k_metrics": ("scaled_matrix",),
     "recommended_k": ("k_metrics",),
@@ -125,6 +127,15 @@ def set_raw_dataset(state: AppState, raw_df: Any, dataset_signature: str) -> Non
     invalidate_from(state, "raw_df", include_key=True)
     state.raw_df = raw_df
     state.dataset_signature = dataset_signature
+
+
+def set_outlier_strategy(state: AppState, strategy: str) -> None:
+    """Store outlier strategy and invalidate only the downstream preprocessed artifacts."""
+
+    if strategy not in ("iqr_clip", "keep"):
+        raise ValueError("Outlier strategy must be 'iqr_clip' or 'keep'.")
+    invalidate_from(state, "outlier_strategy", include_key=False)
+    state.outlier_strategy = strategy
 
 
 def set_preprocessed_data(

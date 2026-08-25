@@ -15,12 +15,14 @@ from src.state import (
     set_results,
     set_selected_k,
     set_solver_preferences,
+    set_outlier_strategy,
 )
 
 
 def populated_state() -> AppState:
     state = new_app_state()
     set_raw_dataset(state, "raw", "dataset-a")
+    set_outlier_strategy(state, "iqr_clip")
     set_preprocessed_data(state, "processed", "scaled", "prep-a", "eda")
     set_k_analysis(state, {"scores": [1, 2]}, 3)
     set_selected_k(state, 3)
@@ -132,6 +134,7 @@ def test_failed_setters_do_not_partially_mutate_valid_state() -> None:
     snapshot = AppState(**vars(state))
     invalid_calls = [
         lambda: set_raw_dataset(state, None, ""),
+        lambda: set_outlier_strategy(state, "invalid_strategy"),
         lambda: set_preprocessed_data(state, None, "scaled", "prep"),
         lambda: set_k_analysis(state, None, 3),
         lambda: set_selected_k(state, 1),
@@ -142,3 +145,15 @@ def test_failed_setters_do_not_partially_mutate_valid_state() -> None:
         with pytest.raises(ValueError):
             call()
         assert state == snapshot
+
+
+def test_outlier_strategy_invalidation() -> None:
+    state = populated_state()
+    assert state.outlier_strategy == "iqr_clip"
+    set_outlier_strategy(state, "keep")
+    assert state.outlier_strategy == "keep"
+    assert state.processed_df is None
+    assert state.scaled_matrix is None
+    assert state.k_metrics is None
+    assert state.model is None
+    assert state.results is None

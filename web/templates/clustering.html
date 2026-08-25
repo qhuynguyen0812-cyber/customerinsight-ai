@@ -214,31 +214,46 @@
     <div id="clustering-error" class="hidden bg-error-container text-on-error-container border border-error/30 rounded-xl p-4 text-sm font-medium"></div>
 
     <!-- CONFIGURATION STRIP -->
-    <section class="bg-surface-container-lowest rounded-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-md mb-xl flex flex-wrap items-center justify-between gap-md" id="config-strip">
-        <div class="flex flex-wrap items-center gap-md font-body-md text-body-md text-on-surface-variant">
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">K:</span> <span class="bg-surface-container-low px-2 py-1 rounded font-bold text-primary" id="config-k-val">3</span>
+    <section class="bg-surface-container-lowest rounded-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-md mb-xl flex flex-col gap-md" id="config-strip">
+        <div class="flex flex-wrap items-center justify-between gap-md">
+            <div class="flex flex-wrap items-center gap-md font-body-md text-body-md text-on-surface-variant">
+                <div class="flex items-center gap-xs">
+                    <span class="font-medium text-on-surface">K:</span> <span class="bg-surface-container-low px-2 py-1 rounded font-bold text-primary" id="config-k-val">3</span>
+                </div>
+                <div class="flex items-center gap-xs">
+                    <span class="font-medium text-on-surface">init:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-init-val">k-means++</span>
+                </div>
+                <div class="flex items-center gap-xs">
+                    <span class="font-medium text-on-surface">n_init:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-ninit-val">10</span>
+                </div>
+                <div class="flex items-center gap-xs">
+                    <span class="font-medium text-on-surface">random_state:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-rs-val">42</span>
+                </div>
             </div>
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">init:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-init-val">k-means++</span>
-            </div>
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">n_init:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-ninit-val">10</span>
-            </div>
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">random_state:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-rs-val">42</span>
-            </div>
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">max_iter:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-maxiter-val">300</span>
-            </div>
-            <div class="flex items-center gap-xs">
-                <span class="font-medium text-on-surface">tol:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-tol-val">0.0001</span>
+            <div class="flex items-center gap-md">
+                <button id="btn-toggle-advanced" class="text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm font-semibold flex items-center gap-xs focus:outline-none transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">settings</span>
+                    Cấu hình nâng cao
+                    <span id="advanced-chevron" class="material-symbols-outlined text-[18px] transition-transform duration-200">expand_more</span>
+                </button>
+                <button id="btn-run-clustering" class="bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold px-6 py-3 rounded-lg shadow-sm transition-colors flex items-center gap-sm active:scale-95">
+                    <span class="material-symbols-outlined text-[18px]">play_arrow</span>
+                    Chạy K-Means
+                </button>
             </div>
         </div>
-        <button id="btn-run-clustering" class="bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold px-6 py-3 rounded-lg shadow-sm transition-colors flex items-center gap-sm active:scale-95">
-            <span class="material-symbols-outlined text-[18px]">play_arrow</span>
-            Chạy K-Means
-        </button>
+        
+        <!-- Collapsible Advanced Config Panel -->
+        <div id="advanced-config-panel" class="hidden border-t border-outline-variant/30 pt-md grid grid-cols-1 md:grid-cols-2 gap-md transition-all duration-300">
+            <div class="flex flex-col gap-xs">
+                <label for="solver-max-iter" class="font-label-sm text-label-sm text-on-surface font-medium">Số lần lặp tối đa (max_iter)</label>
+                <input type="number" id="solver-max-iter" min="1" value="300" class="border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md text-sm text-on-surface">
+            </div>
+            <div class="flex flex-col gap-xs">
+                <label for="solver-tol" class="font-label-sm text-label-sm text-on-surface font-medium">Ngưỡng hội tụ (tol)</label>
+                <input type="number" step="0.000001" min="0.0000001" id="solver-tol" value="0.0001" class="border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-md text-sm text-on-surface">
+            </div>
+        </div>
     </section>
 
     <!-- RESULTS AREA -->
