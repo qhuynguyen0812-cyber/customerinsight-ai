@@ -194,3 +194,15 @@ def test_failed_preprocessing_leaves_previous_valid_state_unchanged() -> None:
     assert state.processed_df is previous_df
     assert state.scaled_matrix is previous_matrix
     assert state.preprocessing_signature == previous_signature
+def test_outlier_strategy_keep() -> None:
+    import pandas as pd
+    df = pd.DataFrame({
+        "CustomerID": [1, 2, 3],
+        "Recency": [10, 20, 1000],
+        "Frequency": [1, 2, 50],
+        "Monetary": [100.0, 200.0, 50000.0]
+    })
+    result = run_pipeline_preprocessing(df, outlier_strategy="keep")
+    assert result["processed_df"] is not None
+    assert len(result["processed_df"]) == len(df)
+    assert result["metadata"]["outlier_strategy"] == "keep"
