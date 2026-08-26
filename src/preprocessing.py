@@ -147,23 +147,17 @@ def run_pipeline_preprocessing(
     missing_strategy: str = DEFAULT_MISSING_STRATEGY,
     outlier_strategy: str = DEFAULT_OUTLIER_STRATEGY,
 ) -> dict[str, Any]:
-    """Run median imputation, optional IQR clipping, and RFM-only scaling locally."""
+    """Run median imputation, IQR clipping, and RFM-only scaling locally."""
 
-    if outlier_strategy not in [DEFAULT_OUTLIER_STRATEGY, "keep"]:
+    if outlier_strategy != DEFAULT_OUTLIER_STRATEGY:
         raise PreprocessingError(
-            f"Unsupported outlier strategy: {outlier_strategy!r}. Supported: 'iqr_clip', 'keep'."
+            f"Unsupported outlier strategy: {outlier_strategy!r}. Supported: 'iqr_clip'."
         )
     _validate_input(df_raw)
     quality_report = check_data_quality(df_raw)
     imputed = handle_missing_values(df_raw, missing_strategy)
     medians = {column: float(imputed[column].median()) for column in RFM_FEATURES}
-
-    if outlier_strategy == "keep":
-        processed_df = imputed.copy(deep=True)
-        iqr_bounds = {}
-    else:
-        processed_df, iqr_bounds = handle_outliers_iqr(imputed)
-
+    processed_df, iqr_bounds = handle_outliers_iqr(imputed)
     scaled_matrix, scaler, scaled_df = scale_rfm_features(processed_df)
 
     metadata = {
