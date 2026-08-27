@@ -16,6 +16,8 @@
     const rawValues = chartData[feature].raw || [];
     const procValues = chartData[feature].processed || [];
     const bounds = (beforeAfter && beforeAfter[feature]) || {};
+    const strategy = currentState?.outlier_strategy ?? "iqr_clip";
+    const keep = strategy === "keep";
 
     // 1. Histogram (Processed Data Distribution)
     const histTrace = {
@@ -59,11 +61,11 @@
     const config = { responsive: true, displayModeBar: false };
     Plotly.newPlot("chart-histogram", [histTrace], histLayout, config);
 
-    // 2. Boxplot (Before vs After IQR comparison)
+    // 2. Strategy-aware before/after boxplot
     const boxTraceRaw = {
       y: rawValues,
       type: "box",
-      name: "Trước IQR (Gốc)",
+      name: "Trước xử lý",
       marker: { color: "#ba1a1a" },
       boxpoints: "outliers",
       jitter: 0.3,
@@ -74,7 +76,7 @@
     const boxTraceProc = {
       y: procValues,
       type: "box",
-      name: "Sau IQR (Clipped)",
+      name: keep ? "Sau Median Imputation / Keep" : "Sau IQR Clipping",
       marker: { color: "#006a61" },
       boxpoints: false,
       hoveron: "points",
@@ -133,10 +135,10 @@
   }
 
   function updatePipeline(state, animated = false) {
-    const rowCount = state.row_count || 720;
+    const rowCount = state.row_count ?? 0;
     const eda = state.eda_data || {};
-    const missingCount = eda.missing_count || 0;
-    const outlierCount = eda.total_outliers || 117;
+    const missingCount = eda.missing_count ?? 0;
+    const outlierCount = eda.total_outliers ?? 0;
 
     if (byId("pipe-row-count")) byId("pipe-row-count").textContent = rowCount;
     if (byId("pipe-missing-count")) byId("pipe-missing-count").textContent = missingCount;
@@ -261,9 +263,27 @@
 
     window.renderWorkflowProgress(state);
 
-    const rowCount = state.row_count || 0;
+    const rowCount = state.row_count ?? 0;
+    const strategy = state.outlier_strategy ?? "iqr_clip";
+    const keep = strategy === "keep";
+    const strategySelect = byId("outlier-strategy");
+    if (strategySelect) strategySelect.value = strategy;
+    if (byId("pipe-outlier-strategy")) byId("pipe-outlier-strategy").textContent = keep ? "Keep (không clipping)" : "IQR Clipping";
+    if (byId("outlier-detail-title")) byId("outlier-detail-title").textContent = keep ? "Keep / Giữ nguyên ngoại lệ" : "IQR Clipping";
+    if (byId("outlier-detail-text")) byId("outlier-detail-text").textContent = keep
+      ? "Không áp dụng IQR clipping. Giá trị ngoại lệ được giữ nguyên sau Median Imputation."
+      : "Giới hạn các giá trị ngoài khoảng Tukey IQR để giảm ảnh hưởng của ngoại lệ lên K-Means.";
+    document.querySelectorAll("[data-strategy-badge]").forEach((element) => {
+      element.textContent = keep ? "Ngoại lệ được giữ nguyên" : "Đã giới hạn ngoại lệ";
+    });
+    document.querySelectorAll("[data-processed-label]").forEach((element) => {
+      element.textContent = keep ? "Sau Median Imputation / Keep (Max)" : "Sau IQR Clipping (Max)";
+    });
+    if (byId("hist-legend")) byId("hist-legend").textContent = keep ? "Sau Median Imputation / Keep" : "Sau IQR Clipping";
+    if (byId("box-legend")) byId("box-legend").textContent = keep ? "Không áp dụng IQR clipping" : "So sánh trước và sau IQR Clipping";
     const countBadge = byId("header-customer-count");
     if (countBadge) countBadge.textContent = rowCount;
+    if (byId("footer-customer-count")) byId("footer-customer-count").textContent = `${rowCount} khách hàng`;
 
     const actionBanner = byId("preprocess-action-banner");
     const resultsContainer = byId("eda-results-container");
@@ -294,38 +314,38 @@
     updatePipeline(state, animated);
 
     // 2. Metrics summary
-    if (byId("stat-row-count")) byId("stat-row-count").textContent = eda.row_count || rowCount;
-    if (byId("stat-feature-count")) byId("stat-feature-count").textContent = eda.feature_count || 3;
-    if (byId("stat-missing-count")) byId("stat-missing-count").textContent = eda.missing_count || 0;
+    if (byId("stat-row-count")) byId("stat-row-count").textContent = eda.row_count ?? rowCount;
+    if (byId("stat-feature-count")) byId("stat-feature-count").textContent = eda.feature_count ?? 3;
+    if (byId("stat-missing-count")) byId("stat-missing-count").textContent = eda.missing_count ?? 0;
 
     // 3. Before/After cards
     if (beforeAfter.Recency) {
       const r = beforeAfter.Recency;
       if (byId("recency-raw-max")) byId("recency-raw-max").textContent = formatNumber(r.raw_max);
-      if (byId("recency-clipped-max")) byId("recency-clipped-max").textContent = formatNumber(r.clipped_max);
-      if (byId("recency-clipped-pct")) byId("recency-clipped-pct").textContent = `Giới hạn cực trị: ${r.pct_clipped}%`;
-      if (byId("recency-q1")) byId("recency-q1").textContent = formatNumber(r.q1);
-      if (byId("recency-q3")) byId("recency-q3").textContent = formatNumber(r.q3);
+      if (byId("recency-clipped-max")) byId("recency-clipped-max").textContent = formatNumber(r.processed_max);
+      if (byId("recency-clipped-pct")) byId("recency-clipped-pct").textContent = keep ? "Không áp dụng IQR clipping" : `Giá trị thay đổi: ${r.pct_changed}%`;
+      if (byId("recency-q1")) byId("recency-q1").textContent = keep ? "—" : formatNumber(r.q1);
+      if (byId("recency-q3")) byId("recency-q3").textContent = keep ? "—" : formatNumber(r.q3);
       if (byId("recency-outliers")) byId("recency-outliers").textContent = r.outliers;
     }
 
     if (beforeAfter.Frequency) {
       const f = beforeAfter.Frequency;
       if (byId("frequency-raw-max")) byId("frequency-raw-max").textContent = formatNumber(f.raw_max);
-      if (byId("frequency-clipped-max")) byId("frequency-clipped-max").textContent = formatNumber(f.clipped_max);
-      if (byId("frequency-clipped-pct")) byId("frequency-clipped-pct").textContent = `Giới hạn cực trị: ${f.pct_clipped}%`;
-      if (byId("frequency-q1")) byId("frequency-q1").textContent = formatNumber(f.q1);
-      if (byId("frequency-q3")) byId("frequency-q3").textContent = formatNumber(f.q3);
+      if (byId("frequency-clipped-max")) byId("frequency-clipped-max").textContent = formatNumber(f.processed_max);
+      if (byId("frequency-clipped-pct")) byId("frequency-clipped-pct").textContent = keep ? "Không áp dụng IQR clipping" : `Giá trị thay đổi: ${f.pct_changed}%`;
+      if (byId("frequency-q1")) byId("frequency-q1").textContent = keep ? "—" : formatNumber(f.q1);
+      if (byId("frequency-q3")) byId("frequency-q3").textContent = keep ? "—" : formatNumber(f.q3);
       if (byId("frequency-outliers")) byId("frequency-outliers").textContent = f.outliers;
     }
 
     if (beforeAfter.Monetary) {
       const m = beforeAfter.Monetary;
       if (byId("monetary-raw-max")) byId("monetary-raw-max").textContent = formatNumber(m.raw_max);
-      if (byId("monetary-clipped-max")) byId("monetary-clipped-max").textContent = formatNumber(m.clipped_max);
-      if (byId("monetary-clipped-pct")) byId("monetary-clipped-pct").textContent = `Giới hạn cực trị: ${m.pct_clipped}%`;
-      if (byId("monetary-q1")) byId("monetary-q1").textContent = formatNumber(m.q1);
-      if (byId("monetary-q3")) byId("monetary-q3").textContent = formatNumber(m.q3);
+      if (byId("monetary-clipped-max")) byId("monetary-clipped-max").textContent = formatNumber(m.processed_max);
+      if (byId("monetary-clipped-pct")) byId("monetary-clipped-pct").textContent = keep ? "Không áp dụng IQR clipping" : `Giá trị thay đổi: ${m.pct_changed}%`;
+      if (byId("monetary-q1")) byId("monetary-q1").textContent = keep ? "—" : formatNumber(m.q1);
+      if (byId("monetary-q3")) byId("monetary-q3").textContent = keep ? "—" : formatNumber(m.q3);
       if (byId("monetary-outliers")) byId("monetary-outliers").textContent = m.outliers;
     }
 
@@ -352,6 +372,7 @@
       features.forEach((feat) => {
         const raw = statsTable.raw[feat] || {};
         const proc = statsTable.processed[feat] || {};
+        const processedLabel = keep ? "Đã xử lý (Median / Keep)" : "Đã xử lý (IQR Clipping)";
 
         rowsHtml.push(`
           <tr class="hover:bg-surface-container-lowest transition-colors border-t border-outline-variant/50">
@@ -366,7 +387,7 @@
             <td class="py-2 px-4 text-right font-medium text-error">${formatNumber(raw.max)}</td>
           </tr>
           <tr class="hover:bg-surface-container-lowest transition-colors bg-surface-container-low/20">
-            <td class="py-2 px-4 text-secondary text-xs"><span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-medium">Đã xử lý (IQR)</span></td>
+            <td class="py-2 px-4 text-secondary text-xs"><span class="px-2 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container font-medium">${processedLabel}</span></td>
             <td class="py-2 px-4 text-right font-medium text-secondary">${formatNumber(proc.mean)}</td>
             <td class="py-2 px-4 text-right text-on-surface-variant">${formatNumber(proc.std)}</td>
             <td class="py-2 px-4 text-right text-on-surface-variant">${formatNumber(proc.min)}</td>
@@ -397,7 +418,12 @@
     }
 
     try {
-      const response = await fetch("/api/preprocess", { method: "POST" });
+      const strategy = byId("outlier-strategy")?.value ?? "iqr_clip";
+      const response = await fetch("/api/preprocess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ outlier_strategy: strategy })
+      });
       const state = await response.json();
       if (!response.ok) throw new Error(state.detail || "Không thể thực hiện tiền xử lý.");
       renderEDAState(state, true);
