@@ -205,7 +205,7 @@
             <div>
                 <h1 class="font-headline-lg text-headline-lg font-bold text-on-surface mb-xs hidden md:block">Khám phá các phân khúc khách hàng</h1>
                 <h1 class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface mb-xs md:hidden">Khám phá các phân khúc khách hàng</h1>
-                <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl" id="header-status-text">Trạng thái: K = 3 · 720 khách hàng</p>
+                <p class="font-body-md text-body-md text-on-surface-variant max-w-2xl" id="header-status-text">Trạng thái: chưa có kết quả</p>
             </div>
         </div>
     </div>
@@ -214,8 +214,9 @@
     <div id="clustering-error" class="hidden bg-error-container text-on-error-container border border-error/30 rounded-xl p-4 text-sm font-medium"></div>
 
     <!-- CONFIGURATION STRIP -->
-    <section class="bg-surface-container-lowest rounded-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-md mb-xl flex flex-wrap items-center justify-between gap-md" id="config-strip">
-        <div class="flex flex-wrap items-center gap-md font-body-md text-body-md text-on-surface-variant">
+    <section class="bg-surface-container-lowest rounded-lg border border-outline-variant shadow-[0_4px_6px_-1px_rgba(0,0,0,0.05)] p-md mb-xl flex flex-col gap-md" id="config-strip">
+        <div class="flex flex-wrap items-center justify-between gap-md">
+          <div class="flex flex-wrap items-center gap-md font-body-md text-body-md text-on-surface-variant">
             <div class="flex items-center gap-xs">
                 <span class="font-medium text-on-surface">K:</span> <span class="bg-surface-container-low px-2 py-1 rounded font-bold text-primary" id="config-k-val">3</span>
             </div>
@@ -234,11 +235,20 @@
             <div class="flex items-center gap-xs">
                 <span class="font-medium text-on-surface">tol:</span> <span class="bg-surface-container-low px-2 py-1 rounded" id="config-tol-val">0.0001</span>
             </div>
-        </div>
-        <button id="btn-run-clustering" class="bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold px-6 py-3 rounded-lg shadow-sm transition-colors flex items-center gap-sm active:scale-95">
+          </div>
+          <div class="flex items-center gap-md">
+            <button id="btn-toggle-advanced" class="text-on-surface-variant hover:text-on-surface text-sm font-semibold flex items-center gap-xs"><span class="material-symbols-outlined text-[18px]">settings</span> Advanced solver config <span id="advanced-chevron" class="material-symbols-outlined text-[18px]">expand_more</span></button>
+            <button id="btn-run-clustering" class="bg-primary hover:bg-primary-container text-on-primary font-label-sm text-label-sm font-semibold px-6 py-3 rounded-lg shadow-sm transition-colors flex items-center gap-sm active:scale-95">
             <span class="material-symbols-outlined text-[18px]">play_arrow</span>
             Chạy K-Means
-        </button>
+            </button>
+          </div>
+        </div>
+        <div id="advanced-config-panel" class="hidden border-t border-outline-variant/30 pt-md grid grid-cols-1 md:grid-cols-2 gap-md">
+            <label class="flex flex-col gap-xs text-sm font-medium">max_iter<input id="solver-max-iter" type="number" min="1" step="1" value="300" class="border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-low"></label>
+            <label class="flex flex-col gap-xs text-sm font-medium">tol<input id="solver-tol" type="number" min="0" step="any" value="0.0001" class="border border-outline-variant rounded-lg px-3 py-2 bg-surface-container-low"></label>
+            <p id="solver-rerun-note" class="md:col-span-2 text-xs text-on-surface-variant">Thay đổi cấu hình solver sẽ xóa kết quả phân cụm hiện tại; hãy chạy lại K-Means.</p>
+        </div>
     </section>
 
     <!-- RESULTS AREA -->
@@ -249,7 +259,7 @@
                 <span class="material-symbols-outlined text-primary mt-1">auto_awesome</span>
                 <div>
                     <h4 class="font-title-md text-title-md font-bold text-on-surface mb-1">✦ TÓM TẮT PHÂN CỤM</h4>
-                    <p class="font-body-md text-body-md text-on-surface-variant" id="summary-paragraph">720 khách hàng đã được chia thành 3 phân khúc rõ nét.</p>
+                    <p class="font-body-md text-body-md text-on-surface-variant" id="summary-paragraph">Chưa có kết quả phân cụm.</p>
                 </div>
             </div>
             <div class="lg:col-span-1">
@@ -309,7 +319,7 @@
                     <div class="grid grid-cols-2 gap-sm">
                         <div class="bg-surface-container-low p-sm rounded">
                             <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Khách hàng</p>
-                            <p class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface" id="metric-row-count">720</p>
+                            <p class="font-headline-lg-mobile text-headline-lg-mobile font-bold text-on-surface" id="metric-row-count">0</p>
                         </div>
                         <div class="bg-surface-container-low p-sm rounded">
                             <p class="font-label-sm text-label-sm text-on-surface-variant uppercase">Phân khúc</p>
