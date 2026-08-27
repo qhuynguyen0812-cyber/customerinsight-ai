@@ -10,6 +10,7 @@ from src.state import (
     new_app_state,
     set_clustering_result,
     set_k_analysis,
+    set_outlier_strategy,
     set_preprocessed_data,
     set_raw_dataset,
     set_results,
@@ -21,10 +22,12 @@ from src.state import (
 def populated_state() -> AppState:
     state = new_app_state()
     set_raw_dataset(state, "raw", "dataset-a")
-    set_preprocessed_data(state, "processed", "scaled", "prep-a", "eda")
+    set_preprocessed_data(
+        state, "processed", "scaled", "prep-a", "eda", outlier_strategy="iqr_clip"
+    )
     set_k_analysis(state, {"scores": [1, 2]}, 3)
     set_selected_k(state, 3)
-    set_solver_preferences(state, {"n_init": 10})
+    set_solver_preferences(state, {"max_iter": 350, "tol": 0.0001})
     set_clustering_result(
         state,
         "model",
@@ -79,11 +82,11 @@ def test_model_input_changes_preserve_upstream_and_clear_all_outputs(change: str
     if change == "selected_k":
         set_selected_k(state, 4)
         assert state.selected_k == 4
-        assert state.solver_preferences == {"n_init": 10}
+        assert state.solver_preferences == {"max_iter": 350, "tol": 0.0001}
     else:
-        set_solver_preferences(state, {"n_init": 20})
+        set_solver_preferences(state, {"max_iter": 400, "tol": 0.0001})
         assert state.selected_k == 3
-        assert state.solver_preferences == {"n_init": 20}
+        assert state.solver_preferences == {"max_iter": 400, "tol": 0.0001}
     assert state.k_metrics == {"scores": [1, 2]}
     for key in ("model", "labels", "cluster_profiles", "run_metadata", "results", "export_payload"):
         assert getattr(state, key) is None
@@ -132,13 +135,49 @@ def test_failed_setters_do_not_partially_mutate_valid_state() -> None:
     snapshot = AppState(**vars(state))
     invalid_calls = [
         lambda: set_raw_dataset(state, None, ""),
+        lambda: set_outlier_strategy(state, "invalid"),
         lambda: set_preprocessed_data(state, None, "scaled", "prep"),
         lambda: set_k_analysis(state, None, 3),
         lambda: set_selected_k(state, 1),
         lambda: set_clustering_result(state, None, [0], "profiles"),
         lambda: set_results(state, None),
+        lambda: set_solver_preferences(state, {"max_iter": True}),
     ]
     for call in invalid_calls:
         with pytest.raises(ValueError):
             call()
+        assert state == snapshot
+
+
+def test_outlier_strategy_change_is_precise_atomic_and_idempotent() -> None:
+    state = populated_state()
+    solver = state.solver_preferences
+    set_outlier_strategy(state, "iqr_clip")
+    assert state.model == "model"
+
+    set_outlier_strategy(state, "keep")
+    assert state.outlier_strategy == "keep"
+    assert (state.raw_df, state.dataset_signature) == ("raw", "dataset-a")
+    assert state.solver_preferences == solver
+    for key in (
+        "processed_df", "scaled_matrix", "preprocessing_signature", "eda_summary",
+        "k_metrics", "recommended_k", "selected_k", "model", "labels",
+        "cluster_profiles", "run_metadata", "results", "export_payload",
+    ):
+        assert getattr(state, key) is None
+
+
+def test_same_solver_preferences_preserve_outputs_and_invalid_values_are_atomic() -> None:
+    state = populated_state()
+    snapshot = AppState(**vars(state))
+    set_solver_preferences(state, {"max_iter": 350, "tol": 0.0001})
+    assert state == snapshot
+
+    for invalid in (
+        {"max_iter": True}, {"max_iter": 3.5}, {"max_iter": 0},
+        {"tol": True}, {"tol": 0}, {"tol": float("nan")},
+        {"tol": float("inf")}, {"foo": 123},
+    ):
+        with pytest.raises(ValueError):
+            set_solver_preferences(state, invalid)
         assert state == snapshot

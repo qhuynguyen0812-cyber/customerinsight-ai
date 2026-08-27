@@ -273,8 +273,13 @@
       return;
     }
 
-    const kVal = state.selected_k || (state.clustering_data ? state.clustering_data.k : 3);
-    const rowCount = state.row_count || 720;
+    const kVal = state.selected_k ?? (state.clustering_data ? state.clustering_data.k : null);
+    const rowCount = state.row_count ?? 0;
+    const prefs = state.solver_preferences ?? { max_iter: 300, tol: 0.0001 };
+    if (byId("solver-max-iter")) byId("solver-max-iter").value = prefs.max_iter ?? 300;
+    if (byId("solver-tol")) byId("solver-tol").value = prefs.tol ?? 0.0001;
+    if (byId("config-maxiter-val")) byId("config-maxiter-val").textContent = prefs.max_iter ?? 300;
+    if (byId("config-tol-val")) byId("config-tol-val").textContent = prefs.tol ?? 0.0001;
 
     // Header & Config
     if (byId("header-status-text")) byId("header-status-text").textContent = `Trạng thái: K = ${kVal} · ${rowCount} khách hàng`;
@@ -282,6 +287,7 @@
 
     const data = state.clustering_data;
     if (data && data.profiles && data.profiles.length > 0) {
+      if (byId("results-area")) byId("results-area").classList.remove("hidden");
       // Config values
       if (byId("config-init-val")) byId("config-init-val").textContent = data.init;
       if (byId("config-ninit-val")) byId("config-ninit-val").textContent = data.n_init;
@@ -333,8 +339,7 @@
         window.renderWorkflowProgress(state);
       }
     } else {
-      // Auto run clustering if not yet clustered
-      runClustering();
+      if (byId("results-area")) byId("results-area").classList.add("hidden");
     }
   }
 
@@ -372,8 +377,47 @@
     }
   }
 
+  async function saveSolverPreferences() {
+    const maxIterInput = byId("solver-max-iter");
+    const tolInput = byId("solver-tol");
+    const errBox = byId("clustering-error");
+    if (!maxIterInput || !tolInput) return;
+    const max_iter = Number(maxIterInput.value);
+    const tol = Number(tolInput.value);
+    if (!Number.isInteger(max_iter) || max_iter < 1 || !Number.isFinite(tol) || tol <= 0) {
+      if (errBox) {
+        errBox.textContent = "max_iter phải là số nguyên dương và tol phải là số hữu hạn dương.";
+        errBox.classList.remove("hidden");
+      }
+      return;
+    }
+    try {
+      const response = await fetch("/api/solver-preferences", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ max_iter, tol })
+      });
+      const state = await response.json();
+      if (!response.ok) throw new Error(state.detail || "Không thể lưu cấu hình solver.");
+      renderClusteringState(state);
+    } catch (err) {
+      if (errBox) {
+        errBox.textContent = err.message;
+        errBox.classList.remove("hidden");
+      }
+    }
+  }
+
   const btnRun = byId("btn-run-clustering");
   if (btnRun) btnRun.addEventListener("click", runClustering);
+
+  const btnToggle = byId("btn-toggle-advanced");
+  const advancedPanel = byId("advanced-config-panel");
+  if (btnToggle && advancedPanel) {
+    btnToggle.addEventListener("click", () => advancedPanel.classList.toggle("hidden"));
+  }
+  if (byId("solver-max-iter")) byId("solver-max-iter").addEventListener("change", saveSolverPreferences);
+  if (byId("solver-tol")) byId("solver-tol").addEventListener("change", saveSolverPreferences);
 
   // Initial load
   fetch("/api/state")
