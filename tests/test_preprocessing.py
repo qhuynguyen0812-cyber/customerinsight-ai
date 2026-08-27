@@ -1,4 +1,4 @@
-"""TV2 Phase 1 preprocessing and integration contract tests."""
+"""TV2 Phase 1 and Phase 2 preprocessing integration contract tests."""
 
 from pathlib import Path
 
@@ -194,15 +194,74 @@ def test_failed_preprocessing_leaves_previous_valid_state_unchanged() -> None:
     assert state.processed_df is previous_df
     assert state.scaled_matrix is previous_matrix
     assert state.preprocessing_signature == previous_signature
-def test_outlier_strategy_keep() -> None:
-    import pandas as pd
-    df = pd.DataFrame({
-        "CustomerID": [1, 2, 3],
-        "Recency": [10, 20, 1000],
-        "Frequency": [1, 2, 50],
-        "Monetary": [100.0, 200.0, 50000.0]
-    })
+
+
+def obvious_outlier_frame() -> pd.DataFrame:
+    return pd.DataFrame(
+        {
+            "CustomerID": ["001", "002", "003", "004", "005"],
+            "Recency": [0.0, 1.0, 2.0, 3.0, 1000.0],
+            "Frequency": [1.0, 2.0, 3.0, 4.0, 500.0],
+            "Monetary": [10.0, 20.0, 30.0, 40.0, 50000.0],
+        }
+    )
+
+
+def test_keep_preserves_actual_outliers_without_iqr_clipping() -> None:
+    df = obvious_outlier_frame()
     result = run_pipeline_preprocessing(df, outlier_strategy="keep")
-    assert result["processed_df"] is not None
+
+    pd.testing.assert_series_equal(
+        result["processed_df"].iloc[-1], df.iloc[-1], check_names=False
+    )
     assert len(result["processed_df"]) == len(df)
+    assert result["processed_df"]["CustomerID"].equals(df["CustomerID"])
+    assert result["iqr_bounds"] == {}
     assert result["metadata"]["outlier_strategy"] == "keep"
+
+
+def test_keep_still_median_imputes_missing_values_and_preserves_identity() -> None:
+    df = obvious_outlier_frame()
+    df.loc[2, "Recency"] = np.nan
+    df.loc[1, "Frequency"] = np.nan
+    df.loc[3, "Monetary"] = np.nan
+
+    result = run_pipeline_preprocessing(df, outlier_strategy="keep")
+    processed = result["processed_df"]
+
+    assert processed.loc[2, "Recency"] == 2.0
+    assert processed.loc[1, "Frequency"] == 3.5
+    assert processed.loc[3, "Monetary"] == 25.0
+    assert processed.loc[0, "CustomerID"] == "001"
+    assert processed["CustomerID"].equals(df["CustomerID"])
+    assert processed.loc[:, list(RFM_FEATURES)].isna().sum().sum() == 0
+
+
+def test_keep_output_is_finite_rfm_only_and_deterministic() -> None:
+    df = obvious_outlier_frame()
+    first = run_pipeline_preprocessing(df, outlier_strategy="keep")
+    second = run_pipeline_preprocessing(df.copy(deep=True), outlier_strategy="keep")
+
+    assert first["scaled_matrix"].shape == (len(df), 3)
+    assert np.isfinite(first["scaled_matrix"]).all()
+    assert list(first["scaled_df"].columns) == list(RFM_FEATURES)
+    assert tuple(first["scaler"].feature_names_in_) == RFM_FEATURES
+    assert first["scaler"].n_features_in_ == 3
+    pd.testing.assert_frame_equal(first["processed_df"], second["processed_df"])
+    np.testing.assert_array_equal(first["scaled_matrix"], second["scaled_matrix"])
+    assert first["preprocessing_signature"] == second["preprocessing_signature"]
+
+
+def test_keep_and_iqr_clip_are_distinct_preprocessing_configs() -> None:
+    df = obvious_outlier_frame()
+    kept = run_pipeline_preprocessing(df, outlier_strategy="keep")
+    clipped = run_pipeline_preprocessing(df, outlier_strategy="iqr_clip")
+
+    for feature in RFM_FEATURES:
+        assert kept["processed_df"].loc[4, feature] == df.loc[4, feature]
+        assert clipped["processed_df"].loc[4, feature] < df.loc[4, feature]
+    assert kept["iqr_bounds"] == {}
+    assert clipped["iqr_bounds"] != {}
+    assert kept["metadata"]["outlier_strategy"] == "keep"
+    assert clipped["metadata"]["outlier_strategy"] == "iqr_clip"
+    assert kept["preprocessing_signature"] != clipped["preprocessing_signature"]
