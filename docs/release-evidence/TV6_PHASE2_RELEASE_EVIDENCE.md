@@ -1,139 +1,163 @@
-# TV6 Phase 2 release evidence
+# TV6 Phase 2 Final Release Evidence
 
-Observed 2026-08-23 (Asia/Bangkok). This document reports only executed checks.
+## 1. Final integrated baseline
 
-## 1–4. Baseline and environment
+- Branch: `phase2/tv6-final-release-qa`
+- Base: `9711a6e` (`Merge pull request #23 from qhuynguyen0812-cyber/phase2/tv5-integration-hardening`)
+- Pre-change tree: clean
+- Local runtime: Python 3.12.13 (`.venv-clean`)
+- Release CI: Windows with Python 3.11
+- Pre-change baseline: 178 passed, 2 warnings in 65.20s
+- Final test count: 197 passed, 2 warnings in 105.20s
 
-- Baseline SHA: `62c16cd` (`origin/main`, `origin/develop`, and TV6 branch before this work).
-- TV6 working branch: `phase2/tv6-release-qa`; verified implementation commit `707b1d2`
-  (release-evidence documentation is committed separately after the observed checks).
-- Integrated develop SHA at final gate: `62c16cd`. Phase 2 owner branches were not integrated.
-- Available clean runtime: Python `3.12.13`. No Python 3.11 interpreter was installed, so the
-  required clean Python 3.11 gate is BLOCKED. `.venv-clean` is excluded from Git.
+## 2. Integrated owner matrix
 
-## 5–10. Executed technical verification
+| Owner | Status | Integrated contract evidence |
+| --- | --- | --- |
+| TV1 validation | PASS | Canonical columns, textual/unique CustomerID, invalid-input rejection, missing-RFM acceptance, failed-upload atomicity |
+| TV2 preprocessing | PASS | Median imputation, default `iqr_clip`, Phase 2 `keep`, RFM-only scaling |
+| TV3 K analysis/solver | PASS | Silhouette recommendation, explicit K confirmation, deterministic defaults, `max_iter`/`tol` overrides |
+| TV4 clustering/profile | PASS | K/label/profile agreement, deterministic profiles, complete typed run metadata, atomic publication |
+| TV5 workflow/state | PASS | Configuration transport, dependency-scoped invalidation, atomic invalid configuration, session isolation |
 
-Commands and observed results:
+## 3. Canonical `iqr_clip` workflow
 
-```text
-git fetch --all --prune                         PASS
-.venv-clean\Scripts\python.exe -m pytest -q -ra
-                                                  107 passed, 2 warnings
-.venv-clean\Scripts\python.exe -m pytest --collect-only -q
-                                                  107 tests collected, 1 warning
-.venv-clean\Scripts\python.exe -m compileall -q web src components tests
-                                                  PASS (exit 0, no output)
-.venv-clean\Scripts\python.exe -m pip check      No broken requirements found.
-git diff --check                                 PASS (line-ending notices only)
-```
+The HTTP release workflow loads `data/sample_customers.csv`, preprocesses, analyzes K, explicitly selects K=3, clusters, reads Results, and exports CSV.
 
-Warnings were Starlette's TestClient/httpx deprecation notice and joblib's physical-core
-detection fallback. Key installed versions included FastAPI 0.141.1, Starlette 1.6.0,
-httpx 0.28.1, pandas 3.0.5, NumPy 2.4.6, scikit-learn 1.8.0, and pytest 9.1.1.
+- Rows: 720
+- Strategy: `iqr_clip`; `iqr_applied=true`
+- Selected K: 3
+- Inertia: approximately 611.4205381920901 (API serialization: 611.4205)
+- Silhouette: approximately 0.45877917738169266 (API serialization: 0.4588)
+- Iterations: 9
+- Profiles: 3; profile counts sum to 720
+- Export: 720 rows and complete raw-RFM mapping
 
-## 11–15. Scientific and configuration evidence
+Evidence: `test_canonical_phase2_workflows_publish_current_results_and_export[iqr_clip-...]`.
 
-- Canonical K=3: PASS. HTTP workflow observed 720 rows, inertia `611.4205`, silhouette
-  `0.4588`, and 9 iterations. Existing strict domain tests retain full-precision tolerances.
-- `outlier=keep`: BLOCKED BY TV2/TV5. `src/preprocessing.py` rejects every non-`iqr_clip`
-  strategy and the API has no preprocessing configuration transport.
-- `max_iter`: BLOCKED BY TV5 (TV4 domain support exists). The K-Means core accepts overrides,
-  but no FastAPI/UI endpoint stores solver preferences.
-- `tol`: BLOCKED BY TV5 for the same transport/state reason.
-- K=5: PASS at HTTP level. Five profiles and five exported cluster values were observed;
-  counts total 720 and raw RFM/CustomerID mapping round-trips exactly.
+## 4. Canonical `keep` workflow
 
-## 16–18. Freshness matrices
+- Strategy: `keep`; preprocessing completes with `iqr_applied=false`
+- No clipping claim: `pct_clipped=0.0`; outliers are retained while missing values are still imputed
+- Selected K: 3
+- Inertia: approximately 882.5145827792722 (API serialization: 882.5146)
+- Silhouette: approximately 0.4502395249927606 (API serialization: 0.4502)
+- Iterations: 11
+- Export: 720 rows; CustomerID one-to-one; raw RFM exact; Cluster and SegmentName complete
+- Repeated export bytes are identical
 
-| Change | Derived state | Results | Export | Evidence |
-|---|---|---|---|---|
-| New dataset | PASS invalidated | PASS blocked | PASS blocked | `test_new_dataset_invalidates_old_results_and_export` |
-| Re-run preprocessing | PASS K/model cleared | PASS blocked | PASS blocked | `test_preprocessing_k_analysis_and_selected_k_changes_block_stale_outputs` |
-| K range change | PASS selection/model cleared | PASS blocked | PASS blocked | same test |
-| Selected K change | PASS model/profile cleared | PASS blocked | PASS blocked | same test |
-| `max_iter` change | BLOCKED: no HTTP transport | BLOCKED | BLOCKED | TV5 dependency |
-| `tol` change | BLOCKED: no HTTP transport | BLOCKED | BLOCKED | TV5 dependency |
+Evidence: `test_canonical_phase2_workflows_publish_current_results_and_export[keep-...]`.
 
-Export is generated on demand from current validated `state.results`; no duplicate persistent
-CSV payload is used in production.
+## 5. Solver override evidence
 
-## 19. Failure paths
+`POST /api/solver-preferences` with `max_iter=400` and `tol=0.0002` preserves the dataset, preprocessing, K metrics, recommendation, and selected K while clearing model, labels, profiles, Results, and Export. Both output endpoints return 422 until clustering is rerun.
 
-| Failure | HTTP/state result |
-|---|---|
-| Missing column, duplicate ID, nonnumeric, negative, infinity, malformed shape | 422; prior valid results/export unchanged |
-| Invalid K range or selected K | 422; prior valid results/export unchanged |
-| Premature results/export | 422; Results page redirects to workflow prerequisite |
-| Invalid preprocessing strategy | Domain rejection covered; HTTP transport not integrated |
-| Invalid solver settings | Domain rejection covered; HTTP transport not integrated |
-| Injected clustering/profile failure | Existing atomic domain setters covered; dedicated HTTP fault injection not added |
+After rerun, effective metadata reports K=3, `init=k-means++`, `n_init=10`, `random_state=42`, `max_iter=400`, and `tol=0.0002`, with finite positive inertia/silhouette, valid iterations, and non-null runtime.
 
-## 20–21. Isolation and missing-value JSON
+Evidence: `test_solver_override_invalidates_only_fit_outputs_then_reaches_model_metadata`.
 
-- Session isolation: PASS with two independent TestClient cookie jars. A complete run in A is
-  invisible to B; loading B leaves A's results and export intact.
-- Missing RFM JSON: PASS. An upload with three allowed missing RFM cells returns HTTP 200,
-  serializes them as JSON `null`, reports `missing_count = 3`, and can be preprocessed.
+## 6. Freshness matrix
 
-## 22. Browser QA
+| Change | Invalidated | Results / Export | Evidence |
+| --- | --- | --- | --- |
+| New dataset | preprocessing, K analysis/selection, fit/profile/output | 422 / 422 | `test_new_dataset_invalidates_old_results_and_export` |
+| Preprocess rerun | K analysis/selection, fit/profile/output | 422 / 422 | `test_preprocessing_k_analysis_and_selected_k_changes_block_stale_outputs` |
+| Outlier strategy change | preprocessing descendants through output | 422 / 422 until full K/fit rerun | `test_strategy_change_preserves_inputs_and_invalidates_all_preprocessing_descendants` |
+| K analysis rerun | selected K and fit/profile/output | 422 / 422 | `test_preprocessing_k_analysis_and_selected_k_changes_block_stale_outputs` |
+| Selected K change | fit/profile/output | 422 / 422 | same test |
+| Solver preference change | fit/profile/output only | 422 / 422 until clustering rerun | `test_solver_override_invalidates_only_fit_outputs_then_reaches_model_metadata` |
 
-Automated in-app browser checks completed the canonical Overview → Sample → Data → EDA →
-K analysis → Confirm K → Clustering → Results → Export flow. Canonical metrics and all 720
-Customer Explorer rows rendered. Overview and Results had no document-level horizontal
-overflow at widths 1920, 1440, 1366, and 1280. Current CSV download fired successfully.
+The Results page redirects to the clustering prerequisite whenever output is stale.
 
-No JavaScript errors were observed, but the console emitted Tailwind CDN production warnings.
-Invalid-upload, missing-RFM, K=5, `keep`, custom solver, reduced-motion, and rerun-after-
-invalidation browser flows were not all visually exercised. Therefore P2 browser QA is
-BLOCKED pending those manual checks and owner integration; it is not claimed as full PASS.
+## 7. Failure atomicity
 
-## 23. Security and NFR audit
+- Invalid uploads: malformed schema, duplicate CustomerID, nonnumeric/negative/infinite RFM all return 422 and preserve prior Results and exact Export bytes.
+- Invalid K range and invalid selected K return 422 without replacing a valid run.
+- Invalid outlier strategy and malformed preprocessing JSON return 422 while preserving strategy, preprocessing signature, K, Results, and Export bytes.
+- Invalid solver values cover boolean/fractional/nonpositive `max_iter`; boolean/nonpositive/NaN/positive infinity/negative infinity `tol`; and unknown keys. Each returns 422 and preserves solver preferences, selected K, Results, and Export bytes.
 
-- No API keys, passwords, tokens, unsafe `eval`, unsafe Python `exec`, uploaded-content shell
-  execution, or user-controlled filesystem paths were found in the scoped source.
-- Customer IDs and segment names inserted by Results JavaScript are HTML-escaped.
-- CSV formula neutralization is not part of the locked six-column/raw-value contract; consumers
-  should import exported CSV as data and avoid executing spreadsheet formulas.
-- No benchmark supports production/enterprise/real-time/millions/high-availability claims.
-  The project is documented as a local academic application.
-- Tailwind, Google Fonts, and Plotly use external CDNs; full offline support is not claimed.
+Evidence: `test_invalid_upload_variants_never_partially_replace_a_valid_run`, `test_invalid_k_requests_are_atomic_and_do_not_expose_partial_state`, `test_invalid_outlier_configuration_is_release_atomic`, and `test_invalid_solver_configuration_is_release_atomic`.
 
-## 24–26. Limitations, blockers, and final state
+## 8. Session isolation
 
-Known limitations/blockers:
+Two independent TestClient sessions prove no cross-session leakage of dataset state, `outlier_strategy`, solver preferences, selected K, Results, or Export eligibility. Client A completes `keep` with custom solver settings; client B begins empty/default, runs independently, and does not alter A.
 
-- TV2/TV5: `outlier=keep` implementation and API/UI transport are absent from integrated develop.
-- TV5: solver preference API/UI transport for `max_iter` and `tol` is absent.
-- TV1 and TV4 Phase 2 commits exist only on remote owner branches and were not merged.
-- Clean Python 3.11 verification cannot run because the interpreter is unavailable locally.
-- Browser QA is partial and CDN-dependent; final manual checks remain.
-- No final slide deck, member evaluation, submission archive, or retained screenshots are present.
+Evidence: `test_phase2_configuration_and_outputs_are_session_isolated` and `test_sessions_are_isolated_in_both_directions`.
 
-Final observed state:
+## 9. Missing-value JSON
 
-```text
-TV6 SCOPE = BLOCKED
-PHASE 2 = BLOCKED
-SOURCE RELEASE READY = BLOCKED
-SUBMISSION READY = BLOCKED
-```
+An upload containing three missing RFM cells returns HTTP 200, reports the actual count 3, and serializes preview/chart missing values as JSON `null`, not NaN/Infinity. Default preprocessing succeeds and retains the actual missing count while median-imputing downstream.
 
-## Phase 2 release matrix
+Evidence: `test_missing_rfm_upload_is_valid_json_and_can_be_preprocessed`.
 
-| ID | Requirement | Owner | Test/evidence | Status | Notes |
-|---|---|---|---|---|---|
-| P2-G01 | `outlier=keep` | TV2/TV5 | source/API audit | BLOCKED | not integrated |
-| P2-G02 | `max_iter`/`tol` | TV4/TV5 | domain tests + API audit | BLOCKED | transport absent |
-| P2-G03 | legacy evidence cleanup | TV6 | README/spec/history edits | PASS | v1.2 current |
-| P2-G04 | state invalidation | TV5/TV6 | HTTP freshness tests | PASS | integrated cases pass |
-| P2-G05 | stale results prevention | TV6 | HTTP freshness tests | PASS | 422/redirect after invalidation |
-| P2-G06 | stale export prevention | TV6 | HTTP freshness tests | PASS | 422 after invalidation |
-| P2-G07 | failure atomicity | owners/TV6 | HTTP invalid-input tests | PASS | available paths pass |
-| P2-G08 | missing-value JSON | TV5/TV6 | missing upload HTTP test | PASS | null + count 3 |
-| P2-G09 | session isolation | TV5/TV6 | two-client HTTP test | PASS | both directions |
-| P2-G10 | K=5 | TV4/TV6 | dynamic export HTTP test | PASS | five profiles/clusters |
-| P2-G11 | clean environment | TV6 | Python 3.12 clean run | BLOCKED | Python 3.11 unavailable |
-| P2-G12 | browser QA | TV6 | in-app browser run | BLOCKED | partial; CDN warning |
-| P2-G13 | security/NFR | TV6 | scoped scan + XSS fix | PASS | limitations documented |
-| P2-G14 | release evidence | TV6 | this document | PASS | observed evidence only |
-| P2-G15 | academic/demo checklist | TV6/submission owner | companion checklist | BLOCKED | deck/member artifacts absent |
+## 10. Dynamic K=5
+
+The complete HTTP workflow explicitly selects K=5 and produces model metadata K=5, five profile rows, five unique exported clusters, profile counts totaling 720, and 720 customer results with exact raw RFM. Repeated export is deterministic.
+
+Evidence: `test_dynamic_k5_export_is_current_complete_and_deterministic`.
+
+## 11. Results/export contract
+
+The exact ordered schema is `CustomerID, Recency, Frequency, Monetary, Cluster, SegmentName`. Results retain active raw row order and raw RFM, require unique/non-null CustomerID, reject unknown, duplicate, stale, or incomplete assignments, and filter metadata to required supplied values without inventing fields. CSV is deterministic UTF-8-SIG with BOM, LF endings, no index, one row per active customer, and current assignments only.
+
+Evidence: `tests/test_tv6_results.py` plus both canonical workflow tests and dynamic K=5.
+
+## 12. Security/NFR
+
+- Repository scan found no embedded API key, password, or secret assignment in source/tests.
+- No `eval`, `exec`, `os.system`, subprocess, or shell execution path was found in application source.
+- `results.js` escapes dynamic CustomerID, segment/cluster labels, names, insights/descriptions before HTML insertion; a regression test protects these sinks.
+- Numeric chart/model values remain numeric rather than unnecessarily HTML-escaped.
+- The results UI no longer fabricates a 720-row fallback.
+- Frontend CDN dependencies remain a network availability dependency; acceptable for local academic/demo scope, but not an offline or enterprise-readiness claim.
+- No arbitrary external input is claimed safe merely because current profile text is internally generated.
+
+## 13. Environment / CI
+
+`.github/workflows/python-release.yml` uses `windows-latest` and Python 3.11, installs requirements, and runs full pytest, collection, compileall over `web src components tests`, and pip check. Local verification uses Python 3.12.13 because that is the available clean repository environment.
+
+- Targeted TV6: 44 passed, 2 warnings in 67.65s
+- Integration seams: 94 passed, 2 warnings in 36.21s
+- Full suite: 197 passed, 2 warnings in 105.20s
+- Collection: 197 tests collected in 3.66s
+- Compileall: PASS (exit 0)
+- Pip check: PASS (`No broken requirements found.`)
+- JavaScript syntax: PASS for `web/static/js/results.js`
+- `git diff --check`: PASS; only informational LF-to-CRLF working-copy notices
+
+`git diff --check` was not added to CI because the required CI already matches the release contract and Windows line-ending notices could create avoidable churn.
+
+## 14. Known warnings
+
+- Starlette deprecates the current TestClient/httpx compatibility path in favor of `httpx2`.
+- joblib/loky could not detect physical cores in this environment and used logical cores. This does not affect deterministic results.
+
+## 15. Source release decision
+
+All TV6 source gates pass. Source readiness is distinct from final submission readiness. No slide deck, member evaluation, packaged archive, or independently recorded demo artifact was found in the repository, so `SUBMISSION READY` cannot be marked PASS from source evidence alone.
+
+- `TV6 SCOPE = PASS`
+- `PHASE 2 SOURCE = PASS`
+- `SOURCE RELEASE READY = PASS`
+- `SUBMISSION READY = NOT VERIFIED`
+
+## 16. Contract deviation audit
+
+- CustomerID used as ML feature: NO
+- median imputation changed: NO
+- default outlier changed: NO
+- `keep` removed: NO
+- StandardScaler changed: NO
+- solver defaults changed: NO
+- automatic K selection added: NO
+- profiling contract replaced: NO
+- business interpretation duplicated: NO
+- raw RFM export changed: NO
+- six-column export schema changed: NO
+- stale results allowed: NO
+- stale export allowed: NO
+- hard-coded production metrics added: NO
+- hard-coded demo row counts added: NO
+- existing tests weakened/deleted: NO
+
+`CONTRACT_DEVIATIONS = 0`

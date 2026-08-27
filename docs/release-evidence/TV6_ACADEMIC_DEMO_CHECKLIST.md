@@ -1,44 +1,60 @@
-# Phase 2 academic deck and demo checklist
+# TV6 Phase 2 Academic Demo Checklist
 
-This checklist prevents slide/demo claims from getting ahead of the verified source.
-No slide deck is stored in this repository, so deck edits and member evaluation remain
-submission-owner actions.
+## Source release prerequisites
 
-## Deck content
+- [x] Integrated TV1-TV5 source contracts present
+- [x] Default `iqr_clip` and Phase 2 `keep` supported end to end
+- [x] Editable solver fields limited to `max_iter` and `tol`
+- [x] Explicit K confirmation required before clustering
+- [x] Current Results and deterministic six-column Export available only after a valid fit
+- [x] Windows Python 3.11 release CI configured
+- [x] Final source gates rerun and recorded in TV6 release evidence
 
-- [ ] Artificial Intelligence, Machine Learning, and Unsupervised Learning context
-- [ ] Customer segmentation and RFM definitions: Recency, Frequency, Monetary
-- [ ] CustomerID is identity/mapping only and is excluded from K-Means features
-- [ ] Missing values use per-feature median imputation
-- [ ] Default outlier handling is IQR clipping; Phase 2 `keep` is shown only after integration
-- [ ] StandardScaler, Euclidean distance, centroid, assignment, centroid update, and convergence
-- [ ] K-Means++, Lloyd algorithm, inertia/WCSS, Elbow, and Silhouette
-- [ ] Recommended K does not replace explicit user confirmation
-- [ ] Cluster profiles, cautious business interpretation, benefits, and limitations
-- [ ] Reproducibility, testing evidence, demo, conclusion, member evaluation, and source submission
+## Demo sequence
 
-TV6-provided content is in `TV6_PHASE2_RELEASE_EVIDENCE.md`: testing, limitations,
-release readiness, and the conclusion that Phase 2 is currently blocked.
+1. Launch the FastAPI app.
+2. Load the canonical sample dataset.
+3. Explain raw Recency, Frequency, and Monetary; CustomerID is identity only.
+4. Show data quality and allowed missing values plus downstream median imputation.
+5. Run default `iqr_clip` preprocessing.
+6. Show strategy-aware EDA and before/after outlier handling.
+7. Run K analysis.
+8. Explain Elbow/inertia and Silhouette evidence.
+9. Explicitly confirm K rather than accepting an automatic production choice.
+10. Run clustering.
+11. Explain profile statistics, deterministic segment names, and evidence-limited interpretation.
+12. Show customer Results.
+13. Export CSV and verify six columns, 720 customers, raw RFM, current Cluster, and SegmentName.
+14. Rerun preprocessing with `keep`.
+15. Show `iqr_applied=false`, preserved outliers, and different K=3 metrics (inertia about 882.5146, silhouette about 0.4502, 11 iterations).
+16. Set custom `max_iter=400` and `tol=0.0002`.
+17. Show Results and Export become unavailable while dataset, preprocessing, K analysis, and selected K remain.
+18. Rerun clustering.
+19. Verify Results metadata reports the effective solver values and Export is available again.
+20. Optionally rerun with K=5 and show five profiles/five exported clusters.
 
-## Demo rehearsal order
+## Presenter checks
 
-1. Create/activate Python 3.11 environment and install `requirements.txt`.
-2. Run `python -m uvicorn web.app:app --host 127.0.0.1 --port 8000`.
-3. Open Overview and load the canonical sample.
-4. Explain Data Quality, then run preprocessing and inspect EDA.
-5. Run K analysis; explain Elbow and Silhouette; explicitly confirm K.
-6. Run clustering and inspect profiles and metadata.
-7. Use Results Customer Explorer and export the current CSV.
-8. After owner integration, optionally demonstrate `outlier=keep` and custom `max_iter`/`tol`.
-9. If time permits, change an upstream input and show that Results/export are blocked.
+- [ ] App launches successfully in the presentation environment
+- [ ] CDN-backed frontend assets load on the presentation network
+- [ ] Default workflow metrics match evidence within deterministic tolerance
+- [ ] `keep` workflow metrics match evidence within deterministic tolerance
+- [ ] Solver-change stale-output behavior is demonstrated
+- [ ] Export opens correctly and has no index column
+- [ ] No claim suggests CustomerID is an ML feature
+- [ ] No claim turns interpretation into unsupported prediction or causality
+- [ ] Backup local screenshots/video prepared if network availability is uncertain
 
-## Classroom contingency
+## Release versus submission status
 
-- Canonical input: `data/sample_customers.csv`.
-- Launch and verification commands are in `README.md`.
-- The app currently loads Tailwind, Google Fonts, and Plotly from CDNs. Internet failure can
-  reduce styling or remove charts/fonts; full offline frontend support is not claimed.
-- Before submission, retain a known-good exported CSV and screenshots outside source control.
-- [ ] Final native slide deck located and updated
-- [ ] Member evaluation completed
-- [ ] Submission source/archive prepared and opened once for verification
+`SOURCE RELEASE READY` may be marked PASS when full tests, collection, compileall, pip check, diff check, evidence, and contract audit pass.
+
+`FINAL SUBMISSION READY` requires separate verification of non-source course artifacts:
+
+- [ ] Final slide deck exists and has been reviewed
+- [ ] Member contribution/evaluation document exists and has been reviewed
+- [ ] Required final archive/package exists and opens correctly
+- [ ] Demo recording or other required demo artifact exists and has been reviewed
+- [ ] Submission naming, size, and upload requirements have been checked
+
+Until every applicable item is independently verified: `FINAL SUBMISSION READY = NOT VERIFIED`.

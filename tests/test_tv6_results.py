@@ -143,3 +143,17 @@ def test_null_required_run_metadata_field_fails(run_metadata: dict[str, object])
     invalid = {**run_metadata, "silhouette": None}
     with pytest.raises(ResultContractError, match="null values: silhouette"):
         available_run_metadata(invalid)
+
+
+def test_results_frontend_escapes_dynamic_text_and_has_no_demo_row_fallback() -> None:
+    source = open("web/static/js/results.js", encoding="utf-8").read()
+    for expression in (
+        "escapeHtml(p.cluster_label)",
+        "escapeHtml(p.segment_name)",
+        "escapeHtml(p.insight)",
+        "escapeHtml(info.label)",
+        "escapeHtml(info.name)",
+        "escapeHtml(info.desc)",
+    ):
+        assert expression in source
+    assert "data.row_count || 720" not in source

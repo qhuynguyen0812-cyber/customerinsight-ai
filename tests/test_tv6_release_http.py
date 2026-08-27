@@ -13,9 +13,9 @@ from components.results_export import CUSTOMER_RESULT_COLUMNS
 from web.app import app
 
 
-def _full_run(client: TestClient, *, k: int = 3) -> dict:
+def _full_run(client: TestClient, *, k: int = 3, strategy: str = "iqr_clip") -> dict:
     assert client.post("/api/dataset/sample").status_code == 200
-    assert client.post("/api/preprocess").status_code == 200
+    assert client.post("/api/preprocess", json={"outlier_strategy": strategy}).status_code == 200
     assert client.post("/api/k-analysis", json={"k_min": 2, "k_max": 10}).status_code == 200
     assert client.post("/api/select-k", json={"selected_k": k}).status_code == 200
     clustered = client.post("/api/cluster")
@@ -24,6 +24,29 @@ def _full_run(client: TestClient, *, k: int = 3) -> dict:
     assert results.status_code == 200
     assert client.get("/api/export").status_code == 200
     return results.json()
+
+
+def _read_export(payload: bytes) -> pd.DataFrame:
+    return pd.read_csv(BytesIO(payload), encoding="utf-8-sig", dtype={"CustomerID": str})
+
+
+def _assert_canonical_export(payload: bytes, *, k: int) -> pd.DataFrame:
+    assert payload.startswith(codecs.BOM_UTF8)
+    assert b"\r\n" not in payload
+    exported = _read_export(payload)
+    raw = pd.read_csv("data/sample_customers.csv", dtype={"CustomerID": str})
+    assert list(exported.columns) == CUSTOMER_RESULT_COLUMNS
+    assert len(exported) == len(raw) == 720
+    assert exported["CustomerID"].is_unique
+    assert set(exported["CustomerID"]) == set(raw["CustomerID"])
+    pd.testing.assert_frame_equal(
+        exported.loc[:, ["CustomerID", "Recency", "Frequency", "Monetary"]],
+        raw.loc[:, ["CustomerID", "Recency", "Frequency", "Monetary"]],
+        check_dtype=False,
+    )
+    assert exported["Cluster"].nunique() == k
+    assert exported["SegmentName"].notna().all()
+    return exported
 
 
 def _assert_outputs_blocked(client: TestClient) -> None:
@@ -151,6 +174,8 @@ def test_missing_rfm_upload_is_valid_json_and_can_be_preprocessed() -> None:
         processed = client.post("/api/preprocess")
         assert processed.status_code == 200, processed.text
         assert processed.json()["eda_data"]["missing_count"] == 3
+        chart_data = processed.json()["eda_data"]["chart_data"]
+        assert all(value is None or isinstance(value, (int, float)) for values in chart_data.values() for value in values["raw"])
 
 
 def test_sessions_are_isolated_in_both_directions() -> None:
@@ -197,3 +222,153 @@ def test_dynamic_k5_export_is_current_complete_and_deterministic() -> None:
         )
         assert exported["Cluster"].nunique() == 5
         assert exported["SegmentName"].notna().all()
+
+
+@pytest.mark.parametrize(
+    ("strategy", "inertia", "silhouette", "iterations"),
+    [
+        ("iqr_clip", 611.4205381920901, 0.45877917738169266, 9),
+        ("keep", 882.5145827792722, 0.4502395249927606, 11),
+    ],
+)
+def test_canonical_phase2_workflows_publish_current_results_and_export(
+    strategy: str, inertia: float, silhouette: float, iterations: int
+) -> None:
+    with TestClient(app) as client:
+        results = _full_run(client, strategy=strategy)
+        state = client.get("/api/state").json()
+        assert state["row_count"] == results["row_count"] == 720
+        assert state["outlier_strategy"] == strategy
+        assert state["eda_data"]["iqr_applied"] is (strategy == "iqr_clip")
+        if strategy == "keep":
+            assert state["eda_data"]["before_after"]["Monetary"]["pct_clipped"] == 0.0
+        assert results["selected_k"] == 3
+        assert results["run_metadata"]["inertia"] == pytest.approx(inertia, abs=0.0001)
+        assert results["run_metadata"]["silhouette"] == pytest.approx(silhouette, abs=0.0001)
+        assert results["run_metadata"]["iterations"] == iterations
+        assert len(results["cluster_profiles"]) == 3
+        assert sum(profile["count"] for profile in results["cluster_profiles"]) == 720
+        first = client.get("/api/export").content
+        assert client.get("/api/export").content == first
+        _assert_canonical_export(first, k=3)
+
+
+def test_solver_override_invalidates_only_fit_outputs_then_reaches_model_metadata() -> None:
+    with TestClient(app) as client:
+        _full_run(client)
+        before = client.get("/api/state").json()
+        response = client.post("/api/solver-preferences", json={"max_iter": 400, "tol": 0.0002})
+        assert response.status_code == 200
+        changed = response.json()
+        assert changed["solver_preferences"] == {"max_iter": 400, "tol": 0.0002}
+        for field in ("dataset_signature", "preprocessing_signature", "selected_k"):
+            assert changed[field] == before[field]
+        assert changed["preprocessed"] is True
+        assert changed["k_analyzed"] is True
+        assert changed["k_analysis_data"]["recommended_k"] == before["k_analysis_data"]["recommended_k"]
+        _assert_outputs_blocked(client)
+
+        assert client.post("/api/cluster").status_code == 200
+        results = client.get("/api/results").json()
+        metadata = results["run_metadata"]
+        assert metadata["k"] == results["selected_k"] == 3
+        assert metadata["init"] == "k-means++"
+        assert metadata["n_init"] == 10
+        assert metadata["random_state"] == 42
+        assert metadata["max_iter"] == 400
+        assert metadata["tol"] == pytest.approx(0.0002)
+        assert metadata["inertia"] > 0 and metadata["silhouette"] > 0
+        assert metadata["iterations"] >= 1
+        assert metadata["runtime_seconds"] is not None
+        assert client.get("/api/export").status_code == 200
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        '{"max_iter":true}', '{"max_iter":3.5}', '{"max_iter":0}', '{"max_iter":-1}',
+        '{"tol":true}', '{"tol":0}', '{"tol":-0.1}', '{"tol":NaN}',
+        '{"tol":Infinity}', '{"tol":-Infinity}', '{"foo":1}',
+    ],
+)
+def test_invalid_solver_configuration_is_release_atomic(payload: str) -> None:
+    with TestClient(app) as client:
+        before_results = _full_run(client)
+        before_state = client.get("/api/state").json()
+        before_export = client.get("/api/export").content
+        response = client.post(
+            "/api/solver-preferences", content=payload, headers={"content-type": "application/json"}
+        )
+        assert response.status_code == 422
+        after_state = client.get("/api/state").json()
+        assert after_state["solver_preferences"] == before_state["solver_preferences"]
+        assert after_state["selected_k"] == before_state["selected_k"]
+        assert client.get("/api/results").json() == before_results
+        assert client.get("/api/export").content == before_export
+
+
+@pytest.mark.parametrize("payload", ['{"outlier_strategy":"winsorize"}', '{broken'])
+def test_invalid_outlier_configuration_is_release_atomic(payload: str) -> None:
+    with TestClient(app) as client:
+        before_results = _full_run(client)
+        before_state = client.get("/api/state").json()
+        before_export = client.get("/api/export").content
+        response = client.post(
+            "/api/preprocess", content=payload, headers={"content-type": "application/json"}
+        )
+        assert response.status_code == 422
+        after_state = client.get("/api/state").json()
+        for field in ("outlier_strategy", "preprocessing_signature", "selected_k"):
+            assert after_state[field] == before_state[field]
+        assert client.get("/api/results").json() == before_results
+        assert client.get("/api/export").content == before_export
+
+
+def test_strategy_change_preserves_inputs_and_invalidates_all_preprocessing_descendants() -> None:
+    with TestClient(app) as client:
+        _full_run(client)
+        before = client.get("/api/state").json()
+        response = client.post("/api/preprocess", json={"outlier_strategy": "keep"})
+        assert response.status_code == 200
+        changed = response.json()
+        assert changed["dataset_loaded"] is True
+        assert changed["dataset_signature"] == before["dataset_signature"]
+        assert changed["solver_preferences"] == before["solver_preferences"]
+        assert changed["preprocessed"] is True
+        assert changed["outlier_strategy"] == "keep"
+        assert changed["k_analyzed"] is False
+        assert changed["k_analysis_data"] is None
+        assert changed["selected_k"] is None
+        _assert_outputs_blocked(client)
+
+        assert client.post("/api/k-analysis", json={"k_min": 2, "k_max": 10}).status_code == 200
+        assert client.post("/api/select-k", json={"selected_k": 3}).status_code == 200
+        assert client.post("/api/cluster").status_code == 200
+        assert client.get("/api/results").status_code == 200
+        assert client.get("/api/export").status_code == 200
+
+
+def test_phase2_configuration_and_outputs_are_session_isolated() -> None:
+    with TestClient(app) as client_a, TestClient(app) as client_b:
+        _full_run(client_a, strategy="keep")
+        assert client_a.post(
+            "/api/solver-preferences", json={"max_iter": 400, "tol": 0.0002}
+        ).status_code == 200
+        assert client_a.post("/api/cluster").status_code == 200
+        a_before = client_a.get("/api/state").json()
+        assert a_before["outlier_strategy"] == "keep"
+
+        b_fresh = client_b.get("/api/state").json()
+        assert b_fresh["dataset_loaded"] is False
+        assert b_fresh["outlier_strategy"] == "iqr_clip"
+        assert b_fresh["solver_preferences"] == {"max_iter": 300, "tol": 0.0001}
+        assert b_fresh["selected_k"] is None
+        _full_run(client_b)
+
+        a_after = client_a.get("/api/state").json()
+        assert a_after["dataset_signature"] == a_before["dataset_signature"]
+        assert a_after["outlier_strategy"] == "keep"
+        assert a_after["solver_preferences"] == {"max_iter": 400, "tol": 0.0002}
+        assert a_after["selected_k"] == 3
+        assert client_a.get("/api/results").status_code == 200
+        assert client_a.get("/api/export").status_code == 200

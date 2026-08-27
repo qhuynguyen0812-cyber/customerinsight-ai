@@ -53,8 +53,8 @@
     profiles.forEach((p) => {
       const segId = p.cluster_id.toString();
       const cnt = counts[segId] !== undefined ? counts[segId] : p.count;
-      tabsHTML += `<button class="px-4 py-2 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-all" data-segment="${segId}">${p.cluster_label} · ${cnt}</button>`;
-      selectHTML += `<option value="${segId}">${p.cluster_label} (${cnt} KH)</option>`;
+      tabsHTML += `<button class="px-4 py-2 border-b-2 border-transparent text-on-surface-variant hover:text-on-surface font-label-sm text-label-sm transition-all" data-segment="${segId}">${escapeHtml(p.cluster_label)} · ${cnt}</button>`;
+      selectHTML += `<option value="${segId}">${escapeHtml(p.cluster_label)} (${cnt} KH)</option>`;
     });
 
     tabsContainer.innerHTML = tabsHTML;
@@ -84,13 +84,13 @@
               <div class="flex justify-between items-start mb-sm relative z-10">
                 <div class="flex items-center gap-sm">
                   <div class="w-4 h-4 rounded-full" style="background-color: ${color}"></div>
-                  <h3 class="font-title-md text-title-md text-on-surface font-bold">${p.cluster_label}</h3>
+                  <h3 class="font-title-md text-title-md text-on-surface font-bold">${escapeHtml(p.cluster_label)}</h3>
                 </div>
                 <span class="font-label-sm text-label-sm bg-surface-container px-2 py-1 rounded text-on-surface-variant font-medium">${p.count} KH (${p.percentage}%)</span>
               </div>
               <div class="mb-md relative z-10">
-                <div class="font-body-md text-body-md font-bold mb-1" style="color: ${color}">${p.segment_name}</div>
-                <p class="font-label-sm text-label-sm text-on-surface-variant">Insight: ${p.insight}</p>
+                <div class="font-body-md text-body-md font-bold mb-1" style="color: ${color}">${escapeHtml(p.segment_name)}</div>
+                <p class="font-label-sm text-label-sm text-on-surface-variant">Insight: ${escapeHtml(p.insight)}</p>
               </div>
             </div>
             <div class="grid grid-cols-3 gap-sm mt-auto pt-md border-t border-outline-variant relative z-10">
@@ -171,9 +171,9 @@
       profileTitle.textContent = `Hồ sơ ${info.label}`;
       profileDesc.innerHTML = `
         <div class="flex items-center gap-2 mb-1">
-          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-white font-label-sm text-label-sm font-medium" style="background-color: ${info.hex}">${info.label}</span>
+          <span class="inline-flex items-center justify-center px-2 py-0.5 rounded text-white font-label-sm text-label-sm font-medium" style="background-color: ${info.hex}">${escapeHtml(info.label)}</span>
         </div>
-        <div class="font-body-lg font-bold mb-1" style="color: ${info.hex}">${info.name}</div>
+        <div class="font-body-lg font-bold mb-1" style="color: ${info.hex}">${escapeHtml(info.name)}</div>
         <div class="font-label-sm text-on-surface-variant mb-6">${info.total} khách hàng · ${info.pct} tổng dữ liệu</div>
 
         <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant mb-6">
@@ -195,7 +195,7 @@
         </div>
 
         <div class="font-label-sm text-on-surface-variant uppercase tracking-wider mb-1 font-semibold">✦ ĐẶC ĐIỂM NỔI BẬT</div>
-        <div class="font-body-md text-body-md text-on-surface">${info.desc}</div>
+        <div class="font-body-md text-body-md text-on-surface">${escapeHtml(info.desc)}</div>
       `;
     }
   }
@@ -288,7 +288,7 @@
     drawerContent.innerHTML = `
       <div class="mb-6 flex items-center justify-between">
         <span class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold">${escapeHtml(customer.id)}</span>
-        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-white text-xs font-medium" style="background-color: ${info.hex}">${info.label} (Model ${customer.cluster})</span>
+        <span class="inline-flex items-center justify-center px-3 py-1 rounded-full text-white text-xs font-medium" style="background-color: ${info.hex}">${escapeHtml(info.label)} (Model ${customer.cluster})</span>
       </div>
       <p class="font-body-md mb-6 font-bold" style="color: ${info.hex}">${escapeHtml(customer.name)}</p>
 
@@ -405,7 +405,7 @@
   function renderResults(data) {
     resultsData = data;
     const profiles = data.cluster_profiles || [];
-    const rowCount = data.row_count || 720;
+    const rowCount = data.row_count ?? 0;
     const counts = data.counts_and_percentages || {};
 
     // Header badge
