@@ -8,6 +8,8 @@ contract testable and lets every page use the same invalidation semantics.
 from __future__ import annotations
 
 from dataclasses import dataclass, fields
+import math
+from numbers import Real
 from typing import Any, Final, Iterable
 
 
@@ -20,6 +22,7 @@ class AppState:
     dataset_signature: str | None = None
 
     # TV2: preprocessing and EDA
+    outlier_strategy: str | None = None
     processed_df: Any | None = None
     scaled_matrix: Any | None = None
     preprocessing_signature: str | None = None
@@ -47,9 +50,10 @@ class AppState:
 STATE_DEPENDENCIES: Final[dict[str, tuple[str, ...]]] = {
     "raw_df": (),
     "dataset_signature": ("raw_df",),
-    "processed_df": ("raw_df", "dataset_signature"),
+    "outlier_strategy": (),
+    "processed_df": ("raw_df", "dataset_signature", "outlier_strategy"),
     "scaled_matrix": ("processed_df", "preprocessing_signature"),
-    "preprocessing_signature": ("raw_df", "dataset_signature"),
+    "preprocessing_signature": ("raw_df", "dataset_signature", "outlier_strategy"),
     "eda_summary": ("processed_df", "preprocessing_signature"),
     "k_metrics": ("scaled_matrix",),
     "recommended_k": ("k_metrics",),
@@ -127,20 +131,44 @@ def set_raw_dataset(state: AppState, raw_df: Any, dataset_signature: str) -> Non
     state.dataset_signature = dataset_signature
 
 
+def validate_outlier_strategy(strategy: Any) -> str:
+    """Return a supported outlier strategy without mutating workflow state."""
+
+    if strategy not in ("iqr_clip", "keep"):
+        raise ValueError("Outlier strategy must be 'iqr_clip' or 'keep'.")
+    return strategy
+
+
+def set_outlier_strategy(state: AppState, strategy: str) -> None:
+    """Store a validated strategy, invalidating preprocessing descendants on change."""
+
+    validated = validate_outlier_strategy(strategy)
+    if state.outlier_strategy == validated:
+        return
+    invalidate_from(state, "outlier_strategy", include_key=False)
+    state.outlier_strategy = validated
+
+
 def set_preprocessed_data(
     state: AppState,
     processed_df: Any,
     scaled_matrix: Any,
     preprocessing_signature: str,
     eda_summary: Any | None = None,
+    *,
+    outlier_strategy: str | None = None,
 ) -> None:
-    """Commit TV2 output, replacing every result derived from an older run."""
+    """Atomically commit strategy and TV2 output after complete validation."""
 
     if state.raw_df is None or state.dataset_signature is None:
         raise ValueError("A validated dataset is required before preprocessing.")
     if processed_df is None or scaled_matrix is None or not preprocessing_signature:
         raise ValueError("Processed data, scaled features, and a signature are required.")
+    strategy = validate_outlier_strategy(
+        (state.outlier_strategy or "iqr_clip") if outlier_strategy is None else outlier_strategy
+    )
     invalidate_from(state, "processed_df", include_key=True)
+    state.outlier_strategy = strategy
     state.processed_df = processed_df
     state.preprocessing_signature = preprocessing_signature
     state.scaled_matrix = scaled_matrix
@@ -170,11 +198,46 @@ def set_selected_k(state: AppState, selected_k: int) -> None:
     state.selected_k = selected_k
 
 
-def set_solver_preferences(state: AppState, preferences: Any) -> None:
-    """Store solver input and invalidate only the solver-derived outputs."""
+def validate_solver_preferences(preferences: Any) -> dict[str, int | float]:
+    """Validate the two TV5-editable solver overrides without coercion."""
 
+    if preferences is None:
+        return {}
+    if not isinstance(preferences, dict):
+        raise ValueError("Solver preferences must be a JSON object.")
+    unknown = set(preferences) - {"max_iter", "tol"}
+    if unknown:
+        raise ValueError("Unsupported solver setting(s): " + ", ".join(sorted(unknown)))
+
+    validated: dict[str, int | float] = {}
+    if "max_iter" in preferences:
+        value = preferences["max_iter"]
+        if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+            raise ValueError("max_iter must be an integer greater than or equal to 1.")
+        validated["max_iter"] = value
+    if "tol" in preferences:
+        value = preferences["tol"]
+        if (
+            isinstance(value, bool)
+            or not isinstance(value, Real)
+            or not math.isfinite(float(value))
+            or value <= 0
+        ):
+            raise ValueError("tol must be a positive finite number.")
+        validated["tol"] = float(value)
+    return validated
+
+
+def set_solver_preferences(state: AppState, preferences: Any) -> None:
+    """Store validated solver input and invalidate solver output only on change."""
+
+    validated = validate_solver_preferences(preferences)
+    current = validate_solver_preferences(state.solver_preferences)
+    defaults = {"max_iter": 300, "tol": 0.0001}
+    if {**defaults, **current} == {**defaults, **validated}:
+        return
     invalidate_from(state, "solver_preferences", include_key=False)
-    state.solver_preferences = preferences
+    state.solver_preferences = validated
 
 
 def set_clustering_result(

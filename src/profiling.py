@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping, Sequence
+from collections.abc import Sequence
 from time import perf_counter
 from typing import Any
 
@@ -11,7 +11,7 @@ import pandas as pd
 from sklearn.metrics import silhouette_score
 
 from components.results_export import build_customer_results, validate_profile
-from src.clustering import get_default_solver_kwargs, run_kmeans
+from src.clustering import run_kmeans
 from src.state import AppState, set_clustering_result
 
 RFM_COLUMNS = ["Recency", "Frequency", "Monetary"]
@@ -20,8 +20,8 @@ PROFILE_REQUIRED_COLUMNS = [
 ]
 
 
-def _validated_business_data(data: pd.DataFrame) -> pd.DataFrame:
-    if not isinstance(data, pd.DataFrame) or data.empty:
+def _validated_business_data(data: pd.DataFrame | None) -> pd.DataFrame:
+    if data is None or not isinstance(data, pd.DataFrame) or data.empty:
         raise ValueError("Processed customer data must be a non-empty DataFrame.")
     missing = [column for column in ["CustomerID", *RFM_COLUMNS] if column not in data.columns]
     if missing:
@@ -131,28 +131,48 @@ def run_clustering_workflow(state: AppState) -> dict[str, Any]:
 
     started = perf_counter()
     fit = run_kmeans(state.scaled_matrix, state.selected_k, state.solver_preferences)
-    silhouette = float(silhouette_score(state.scaled_matrix, fit.labels))
-    profiles = compute_cluster_profiles(customers, fit.labels)
+    labels = _validated_labels(fit.labels, len(customers))
+    selected_k = int(state.selected_k)
+    distinct_clusters = len(np.unique(labels))
+    if distinct_clusters != selected_k:
+        raise ValueError(
+            f"K-Means produced {distinct_clusters} distinct clusters for selected K={selected_k}."
+        )
+
+    silhouette = float(silhouette_score(state.scaled_matrix, labels))
+    profiles = compute_cluster_profiles(customers, labels)
+    if len(profiles) != selected_k:
+        raise ValueError(
+            f"Cluster profiles contain {len(profiles)} rows for selected K={selected_k}."
+        )
+    if int(profiles["count"].sum()) != len(customers):
+        raise ValueError("Cluster profile counts do not cover every active customer.")
     interpretation = generate_business_interpretation(profiles)
+
     assignments = customers[["CustomerID"]].assign(
-        Cluster=fit.labels,
-        SegmentName=pd.Series(fit.labels).map(
+        Cluster=labels,
+        SegmentName=pd.Series(labels).map(
             profiles.set_index("Cluster")["SegmentName"]
         ).to_numpy(),
     )
     results = build_customer_results(
         state.raw_df.loc[:, ["CustomerID", *RFM_COLUMNS]], assignments
     )
-    effective = get_default_solver_kwargs()
-    if isinstance(state.solver_preferences, Mapping):
-        effective.update(state.solver_preferences)
+    effective = fit.model.get_params()
     metadata = {
-        "k": int(state.selected_k), **effective, "inertia": fit.inertia,
-        "silhouette": silhouette, "iterations": fit.iterations,
-        "runtime_seconds": perf_counter() - started,
+        "k": selected_k,
+        "init": str(effective["init"]),
+        "n_init": int(effective["n_init"]),
+        "random_state": int(effective["random_state"]),
+        "max_iter": int(effective["max_iter"]),
+        "tol": float(effective["tol"]),
+        "inertia": float(fit.inertia),
+        "silhouette": float(silhouette),
+        "iterations": int(fit.iterations),
+        "runtime_seconds": float(perf_counter() - started),
     }
     set_clustering_result(
-        state, fit.model, fit.labels, profiles,
+        state, fit.model, labels, profiles,
         run_metadata=metadata, results=results,
     )
     return {"profiles": profiles, "interpretation": interpretation, "metadata": metadata}
